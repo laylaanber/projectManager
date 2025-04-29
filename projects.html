@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projects - Orange Project Manager</title>
+    <link rel="stylesheet" href="css/projects.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- 
+    ==============================================
+    NAVIGATION BAR
+    ============================================== 
+    -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <!-- Logo -->
+            <div class="nav-logo">
+                <img src="orange logo.webp" alt="Orange Logo">
+            </div>
+            
+            <!-- Site Title -->
+            <div class="nav-title">
+                <h2>Project Manager</h2>
+                <p>Track and manage your projects</p>
+            </div>
+            
+            <!-- Mobile Menu Toggle -->
+            <button class="hamburger" id="menu-toggle" aria-label="Toggle menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            
+            <!-- Navigation Links -->
+            <div class="nav-links">
+                <a href="dashboard.html">Dashboard</a>
+                <a href="projects.html" class="active">Projects</a>
+                <a href="tasks.html">Tasks</a>
+                <a href="team.html">Team</a>
+                <!-- User info will be added dynamically -->
+            </div>
+        </div>
+    </nav>
+
+    <!-- 
+    ==============================================
+    PROJECTS CONTENT
+    ============================================== 
+    -->
+    <div class="projects-container">
+        <div class="projects-header">
+            <h1 class="page-title">Projects</h1>
+            <button id="new-project-btn" class="btn-primary">
+                <i class="fas fa-plus"></i> New Project
+            </button>
+        </div>
+        
+        <!-- Projects Filter & Search -->
+        <div class="filters-container">
+            <div class="search-container">
+                <input type="text" id="search-projects" placeholder="Search projects...">
+                <i class="fas fa-search"></i>
+            </div>
+            
+            <div class="filter-options">
+                <select id="status-filter" size="1">
+                    <option value="all">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="completed">Completed</option>
+                    <option value="on-hold">On Hold</option>
+                </select>
+                
+                <select id="sort-projects" size="1">
+                    <option value="newest">Newest First</option>
+                    <option value="oldest">Oldest First</option>
+                    <option value="name-asc">Name A-Z</option>
+                    <option value="name-desc">Name Z-A</option>
+                    <option value="deadline">Deadline</option>
+                </select>
+            </div>
+        </div>
+        
+        <!-- Projects List -->
+        <div class="projects-list" id="projects-list">
+            <div class="loading-spinner">
+                <i class="fas fa-spinner fa-spin"></i>
+            </div>
+            <!-- Projects will be loaded dynamically -->
+        </div>
+        
+        <!-- No Projects Message -->
+        <div class="no-projects" id="no-projects" style="display: none;">
+            <div class="empty-state">
+                <i class="fas fa-folder-open"></i>
+                <h3>No projects found</h3>
+                <p>Create your first project to get started</p>
+                <button class="btn-primary" id="create-first-project">
+                    <i class="fas fa-plus"></i> Create Project
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 
+    ==============================================
+    PROJECT MODAL
+    ============================================== 
+    -->
+    <div class="modal" id="project-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">New Project</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <form id="project-form">
+                    <div class="form-group">
+                        <label for="project-name">Project Name</label>
+                        <input type="text" id="project-name" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="project-description">Description</label>
+                        <textarea id="project-description" rows="4"></textarea>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="project-start-date">Start Date</label>
+                            <input type="date" id="project-start-date" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="project-deadline">Deadline</label>
+                            <input type="date" id="project-deadline" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="project-status">Status</label>
+                        <select id="project-status" size="1">
+                            <option value="active">Active</option>
+                            <option value="on-hold">On Hold</option>
+                            <option value="completed">Completed</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Assign Team Members</label>
+                        <div class="team-selection" id="team-selection">
+                            <!-- Team members will be added dynamically -->
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" id="cancel-project">Cancel</button>
+                        <button type="submit" class="btn-primary" id="save-project">Create Project</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script src="js/auth.js"></script>
+    <script src="js/projects.js"></script>
+</body>
+</html>

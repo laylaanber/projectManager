@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Manager</title>
+    <link rel="stylesheet" href="css/obsidian.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <img src="orange logo.webp" alt="Logo" class="sidebar-logo">
+                <h2>Project Manager</h2>
+            </div>
+            
+            <!-- User info at top of sidebar -->
+            <div class="user-profile">
+                <div class="user-info" id="user-info">
+                    <!-- User info will be inserted here -->
+                </div>
+            </div>
+            
+            <!-- Navigation -->
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <h3 class="nav-title">Workspace</h3>
+                    <a href="#" class="nav-item active" data-view="dashboard">
+                        <i class="fas fa-columns"></i>Dashboard
+                    </a>
+                    <a href="#" class="nav-item" data-view="projects">
+                        <i class="fas fa-project-diagram"></i>Projects
+                    </a>
+                    <a href="#" class="nav-item" data-view="calendar">
+                        <i class="fas fa-calendar-alt"></i>Calendar
+                    </a>
+                    <a href="#" class="nav-item" data-view="team">
+                        <i class="fas fa-users"></i>Team
+                    </a>
+                </div>
+                
+                <div class="nav-section">
+                    <h3 class="nav-title">Recent Projects</h3>
+                    <div id="recent-projects-nav">
+                        <!-- Recent projects will be inserted here -->
+                        <div class="nav-placeholder">
+                            <div class="placeholder-line"></div>
+                            <div class="placeholder-line"></div>
+                            <div class="placeholder-line"></div>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <a href="#" id="new-project-btn" class="new-project-btn">
+                    <i class="fas fa-plus"></i> New Project
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <button id="toggle-sidebar" class="toggle-sidebar">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="search-container">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="global-search" placeholder="Search..." />
+                </div>
+                <div class="view-controls">
+                    <button class="view-btn active" data-view="card">
+                        <i class="fas fa-th-large"></i>
+                    </button>
+                    <button class="view-btn" data-view="list">
+                        <i class="fas fa-list"></i>
+                    </button>
+                    <button class="view-btn" data-view="timeline">
+                        <i class="fas fa-stream"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Content Views -->
+            <div class="content-container">
+                <!-- Dashboard View -->
+                <div class="content-view active" id="dashboard-view">
+                    <div class="view-header">
+                        <h1>Dashboard</h1>
+                        <div class="view-actions">
+                            <span class="date-display" id="current-date"></span>
+                        </div>
+                    </div>
+                    
+                    <!-- Progress Overview -->
+                    <div class="widget-row">
+                        <div class="progress-widget">
+                            <div class="progress-header">
+                                <h3>Project Progress</h3>
+                            </div>
+                            <div class="progress-bars" id="project-progress">
+                                <!-- Progress bars will be inserted here -->
+                                <div class="progress-placeholder">
+                                    <div class="placeholder-header"></div>
+                                    <div class="placeholder-bar"></div>
+                                </div>
+                                <div class="progress-placeholder">
+                                    <div class="placeholder-header"></div>
+                                    <div class="placeholder-bar"></div>
+                                </div>
+                                <div class="progress-placeholder">
+                                    <div class="placeholder-header"></div>
+                                    <div class="placeholder-bar"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Upcoming and Activity Row -->
+                    <div class="widget-row two-column">
+                        <!-- Upcoming Deadlines Widget -->
+                        <div class="widget">
+                            <div class="widget-header">
+                                <h3>Upcoming Deadlines</h3>
+                            </div>
+                            <div class="widget-content" id="upcoming-deadlines">
+                                <!-- Deadlines will be inserted here -->
+                                <div class="placeholder-item"></div>
+                                <div class="placeholder-item"></div>
+                                <div class="placeholder-item"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Recent Activity Widget -->
+                        <div class="widget">
+                            <div class="widget-header">
+                                <h3>Recent Activity</h3>
+                            </div>
+                            <div class="widget-content" id="recent-activity">
+                                <!-- Activity items will be inserted here -->
+                                <div class="placeholder-item"></div>
+                                <div class="placeholder-item"></div>
+                                <div class="placeholder-item"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Projects Timeline -->
+                    <div class="widget-row">
+                        <div class="widget full-width">
+                            <div class="widget-header">
+                                <h3>Projects Timeline</h3>
+                            </div>
+                            <div class="timeline-container" id="projects-timeline">
+                                <!-- Timeline will be inserted here -->
+                                <div class="timeline-placeholder"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Projects View -->
+                <div class="content-view" id="projects-view">
+                    <!-- Will be populated by JS -->
+                </div>
+                
+                <!-- Calendar View -->
+                <div class="content-view" id="calendar-view">
+                    <!-- Will be populated by JS -->
+                </div>
+                
+                <!-- Team View -->
+                <div class="content-view" id="team-view">
+                    <!-- Will be populated by JS -->
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Modals -->
+    <div class="modal" id="project-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">New Project</h2>
+                <button class="close-modal" id="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="project-form">
+                    <div class="form-group">
+                        <label for="project-name">Project Name</label>
+                        <input type="text" id="project-name" placeholder="Enter project name" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="project-description">Description</label>
+                        <textarea id="project-description" placeholder="Project description..." rows="3"></textarea>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label for="project-start-date">Start Date</label>
+                            <input type="date" id="project-start-date" required>
+                        </div>
+                        
+                        <div class="form-group half">
+                            <label for="project-deadline">Deadline</label>
+                            <input type="date" id="project-deadline" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="project-status">Status</label>
+                        <select id="project-status">
+                            <option value="not started">Not Started</option>
+                            <option value="in progress">In Progress</option>
+                            <option value="on hold">On Hold</option>
+                            <option value="completed">Completed</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="team-selection">Team Members</label>
+                        <div id="team-selection" class="team-selection">
+                            <!-- Team member checkboxes will be inserted here -->
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" id="cancel-project" class="btn-secondary">Cancel</button>
+                        <button type="submit" id="save-project" class="btn-primary">Save Project</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script src="js/obsidian.js"></script>
+</body>
+</html>
