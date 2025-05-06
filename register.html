@@ -2,42 +2,246 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register - Orange Coding Academy</title>
-    <link rel="stylesheet" href="css/auth.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Register - Orange Project Manager</title>
+    <link rel="stylesheet" href="css/obsidian.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            overflow: auto;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        
+        .auth-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex: 1;
+            padding: 40px 20px;
+        }
+        
+        .auth-card {
+            background-color: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 8px 24px var(--shadow-color);
+            width: 100%;
+            max-width: 420px;
+            padding: 30px;
+        }
+        
+        .auth-logo {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        
+        .auth-logo img {
+            width: 70px;
+            height: 70px;
+            border-radius: var(--border-radius);
+        }
+        
+        .auth-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .auth-header h1 {
+            color: var(--text-primary);
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        
+        .auth-header p {
+            color: var(--text-secondary);
+            font-size: 15px;
+        }
+        
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .form-group label {
+            font-weight: 500;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        
+        .input-with-icon {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        
+        .input-with-icon i {
+            position: absolute;
+            left: 12px;
+            color: var(--text-muted);
+        }
+        
+        .input-with-icon input {
+            width: 100%;
+            padding: 12px 12px 12px 40px;
+            background-color: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            font-size: 15px;
+            color: var(--text-primary);
+            transition: border-color 0.3s ease;
+        }
+        
+        .input-with-icon input:focus {
+            outline: none;
+            border-color: var(--accent-orange);
+            box-shadow: 0 0 0 2px rgba(255, 111, 0, 0.1);
+        }
+        
+        .toggle-password {
+            position: absolute;
+            right: 12px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+        
+        .form-options {
+            display: flex;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .remember-me input[type="checkbox"] {
+            accent-color: var(--accent-orange);
+        }
+        
+        .remember-me label a {
+            color: var(--accent-orange);
+            text-decoration: none;
+        }
+        
+        .remember-me label a:hover {
+            text-decoration: underline;
+        }
+        
+        .btn-primary {
+            background-color: var(--accent-orange);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            padding: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            background-color: #e65100;
+        }
+        
+        .error-message {
+            color: var(--status-cancelled);
+            font-size: 14px;
+            text-align: center;
+            min-height: 20px;
+            padding: 5px 0;
+        }
+        
+        .auth-footer {
+            text-align: center;
+            margin-top: 25px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        
+        .auth-footer a {
+            color: var(--accent-orange);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .auth-footer a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Password strength meter */
+        .password-strength {
+            margin-top: 5px;
+        }
+        
+        .strength-meter {
+            height: 5px;
+            background-color: var(--bg-tertiary);
+            border-radius: 3px;
+            margin-bottom: 5px;
+        }
+        
+        .strength-bar {
+            height: 100%;
+            border-radius: 3px;
+            width: 0;
+            transition: width 0.3s ease, background-color 0.3s ease;
+        }
+        
+        .strength-text {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        
+        .strength-weak .strength-bar {
+            width: 25%;
+            background-color: var(--status-cancelled);
+        }
+        
+        .strength-medium .strength-bar {
+            width: 50%;
+            background-color: var(--status-hold);
+        }
+        
+        .strength-good .strength-bar {
+            width: 75%;
+            background-color: var(--accent-blue);
+        }
+        
+        .strength-strong .strength-bar {
+            width: 100%;
+            background-color: var(--status-completed);
+        }
+        
+        @media screen and (max-width: 480px) {
+            .auth-card {
+                padding: 20px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <!-- 
-    ==============================================
-    NAVIGATION BAR
-    ============================================== 
-    -->
-    <nav class="navbar">
-        <div class="nav-container">
-            <!-- Logo -->
-            <div class="nav-logo">
-                <img src="orange logo.webp" alt="Orange Logo">
-            </div>
-            
-            <!-- Site Title -->
-            <div class="nav-title">
-                <h2>Coding Academy</h2>
-                <p>Empowering digital talents</p>
-            </div>
-        </div>
-    </nav>
-
-    <!-- 
-    ==============================================
-    REGISTRATION FORM
-    ============================================== 
-    -->
     <div class="auth-container">
         <div class="auth-card">
+            <div class="auth-logo">
+                <img src="orange logo.webp" alt="Orange Project Manager">
+            </div>
+            
             <div class="auth-header">
                 <h1>Create Account</h1>
-                <p>Join Orange Coding Academy</p>
+                <p>Get started with Orange Project Manager</p>
             </div>
             
             <form id="register-form" class="auth-form">
@@ -92,9 +296,7 @@
                     </div>
                 </div>
                 
-                <div class="form-group">
-                    <button type="submit" class="btn-primary">Create Account</button>
-                </div>
+                <button type="submit" class="btn-primary">Create Account</button>
                 
                 <div id="reg-error-message" class="error-message"></div>
             </form>
