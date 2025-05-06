@@ -6,6 +6,7 @@
 const projectsList = document.getElementById('projects-list');
 const noProjectsMessage = document.getElementById('no-projects');
 const newProjectBtn = document.getElementById('new-project-btn');
+const newProjectHeaderBtn = document.getElementById('new-project-header-btn');
 const createFirstProjectBtn = document.getElementById('create-first-project');
 const projectModal = document.getElementById('project-modal');
 const modalTitle = document.getElementById('modal-title');
@@ -22,12 +23,16 @@ const closeModalBtn = document.querySelector('.close-modal');
 const searchInput = document.getElementById('search-projects');
 const statusFilter = document.getElementById('status-filter');
 const sortProjects = document.getElementById('sort-projects');
+const toggleSidebarBtn = document.getElementById('toggle-sidebar');
+const recentProjectsNavElement = document.getElementById('recent-projects-nav');
+const userInfoElement = document.getElementById('user-info');
 
 // Application State
 let currentUser = null;
 let projects = [];
 let teamMembers = [];
 let editingProjectId = null;
+let currentView = 'card';
 
 // ==============================================
 // INITIALIZATION
@@ -42,8 +47,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Get current user
     currentUser = getCurrentUser();
     
-    // Initialize mobile menu
-    initMobileMenu();
+    // Initialize sidebar toggle
+    initSidebar();
     
     // Load projects
     loadProjects();
@@ -54,17 +59,24 @@ document.addEventListener('DOMContentLoaded', function() {
     // Set up event listeners
     setupEventListeners();
     
-    // Update navigation with user info
+    // Update UI with user info
     updateUserUI();
+    
+    // Update recent projects in sidebar
+    updateRecentProjectsNav();
 });
 
 // ==============================================
 // EVENT LISTENERS
 // ==============================================
 function setupEventListeners() {
-    // New project button
+    // New project buttons
     if (newProjectBtn) {
         newProjectBtn.addEventListener('click', () => openProjectModal());
+    }
+    
+    if (newProjectHeaderBtn) {
+        newProjectHeaderBtn.addEventListener('click', () => openProjectModal());
     }
     
     // Create first project button
@@ -107,6 +119,40 @@ function setupEventListeners() {
             closeProjectModal();
         }
     });
+    
+    // Handle sidebar navigation
+    setupSidebarNavigation();
+}
+
+function setupSidebarNavigation() {
+    // Make sure sidebar links work properly
+    const dashboardLink = document.querySelector('a[href="dashboard.html"]');
+    if (dashboardLink) {
+        dashboardLink.addEventListener('click', function() {
+            window.location.href = 'dashboard.html';
+        });
+    }
+    
+    const projectsLink = document.querySelector('a[href="projects.html"]');
+    if (projectsLink) {
+        projectsLink.addEventListener('click', function() {
+            window.location.href = 'projects.html';
+        });
+    }
+    
+    const calendarLink = document.querySelector('a[href="calendar.html"]');
+    if (calendarLink) {
+        calendarLink.addEventListener('click', function() {
+            window.location.href = 'calendar.html';
+        });
+    }
+    
+    const teamLink = document.querySelector('a[href="team.html"]');
+    if (teamLink) {
+        teamLink.addEventListener('click', function() {
+            window.location.href = 'team.html';
+        });
+    }
 }
 
 // ==============================================
@@ -125,6 +171,9 @@ function saveProjects() {
     // Save projects to local storage
     const projectsKey = `orangeAcademyProjects_${currentUser.userId}`;
     localStorage.setItem(projectsKey, JSON.stringify(projects));
+    
+    // Update recent projects in sidebar
+    updateRecentProjectsNav();
 }
 
 function renderProjects() {
@@ -136,7 +185,7 @@ function renderProjects() {
     // Show or hide "no projects" message
     if (projects.length === 0) {
         if (noProjectsMessage) {
-            noProjectsMessage.style.display = 'block';
+            noProjectsMessage.style.display = 'flex';
         }
         return;
     } else {
@@ -153,7 +202,7 @@ function renderProjects() {
         const searchTerm = searchInput.value.toLowerCase().trim();
         filteredProjects = filteredProjects.filter(project => 
             project.name.toLowerCase().includes(searchTerm) || 
-            project.description.toLowerCase().includes(searchTerm)
+            (project.description && project.description.toLowerCase().includes(searchTerm))
         );
     }
     
@@ -174,18 +223,28 @@ function renderProjects() {
                     return a.name.localeCompare(b.name);
                 case 'name-desc':
                     return b.name.localeCompare(a.name);
-                case 'deadline-asc':
+                case 'deadline':
                     return new Date(a.deadline) - new Date(b.deadline);
-                case 'deadline-desc':
-                    return new Date(b.deadline) - new Date(a.deadline);
-                case 'status':
-                    return a.status.localeCompare(b.status);
-                case 'recent':
-                    return new Date(b.createdAt) - new Date(a.createdAt);
+                case 'oldest':
+                    return new Date(a.createdAt) - new Date(b.createdAt);
+                case 'newest':
                 default:
-                    return 0;
+                    return new Date(b.createdAt) - new Date(a.createdAt);
             }
         });
+    }
+    
+    // Show no projects message if filtered list is empty
+    if (filteredProjects.length === 0) {
+        const noResults = document.createElement('div');
+        noResults.className = 'empty-state';
+        noResults.innerHTML = `
+            <i class="fas fa-search"></i>
+            <h3>No matching projects</h3>
+            <p>Try adjusting your search or filters</p>
+        `;
+        projectsList.appendChild(noResults);
+        return;
     }
     
     // Render each project
@@ -198,11 +257,8 @@ function renderProjects() {
 function createProjectCard(project) {
     // Create project card element
     const card = document.createElement('div');
-    card.className = 'project-card';
+    card.className = `project-card status-${getStatusClass(project.status)}`;
     card.dataset.id = project.id;
-    
-    // Get status class for styling
-    const statusClass = getStatusClass(project.status);
     
     // Calculate progress if project has tasks
     let progressPercentage = 0;
@@ -223,19 +279,21 @@ function createProjectCard(project) {
     const deadline = formatDate(new Date(project.deadline));
     
     // Get team member information
-    const teamMembers = project.team ? project.team.map(memberId => {
-        const member = getTeamMember(memberId);
-        return member ? member.name : 'Unknown';
-    }).join(', ') : 'No team assigned';
+    const teamMembers = project.team && project.team.length > 0 ? 
+        project.team.map(memberId => {
+            const member = getTeamMember(memberId);
+            return member ? member.name : 'Unknown';
+        }).join(', ') : 
+        'No team assigned';
     
     // Build HTML
     card.innerHTML = `
-        <div class="project-header ${statusClass}">
+        <div class="project-header">
             <h3 class="project-title">${project.name}</h3>
             <span class="project-status">${project.status}</span>
         </div>
         <div class="project-body">
-            <p class="project-description">${project.description}</p>
+            <p class="project-description">${project.description || 'No description provided'}</p>
             
             <div class="project-progress">
                 <div class="progress-label">
@@ -255,11 +313,11 @@ function createProjectCard(project) {
                 </div>
                 <div class="detail-group">
                     <span class="detail-label"><i class="fas fa-clock"></i> Deadline:</span>
-                    <span class="detail-value ${timeRemaining.urgent ? 'urgent' : ''}">${deadline}</span>
+                    <span class="detail-value ${timeRemaining.overdue ? 'overdue' : timeRemaining.urgent ? 'urgent' : ''}">${deadline}</span>
                 </div>
                 <div class="detail-group">
                     <span class="detail-label"><i class="fas fa-users"></i> Team:</span>
-                    <span class="detail-value team-members">${teamMembers}</span>
+                    <span class="detail-value team-members" title="${teamMembers}">${teamMembers}</span>
                 </div>
             </div>
         </div>
@@ -297,19 +355,21 @@ function createProjectCard(project) {
 }
 
 function getStatusClass(status) {
+    if (!status) return 'not-started';
+    
     switch(status.toLowerCase()) {
         case 'not started':
-            return 'status-not-started';
+            return 'not-started';
         case 'in progress':
-            return 'status-progress';
+            return 'progress';
         case 'on hold':
-            return 'status-hold';
+            return 'hold';
         case 'completed':
-            return 'status-completed';
+            return 'completed';
         case 'cancelled':
-            return 'status-cancelled';
+            return 'cancelled';
         default:
-            return '';
+            return 'not-started';
     }
 }
 
@@ -349,7 +409,7 @@ function openProjectModal(projectId = null) {
         const project = projects.find(p => p.id === projectId);
         if (project) {
             projectName.value = project.name;
-            projectDescription.value = project.description;
+            projectDescription.value = project.description || '';
             projectStartDate.value = project.startDate;
             projectDeadline.value = project.deadline;
             projectStatus.value = project.status;
@@ -488,8 +548,26 @@ function loadTeamMembers() {
     const teamKey = `orangeAcademyTeam_${currentUser.userId}`;
     teamMembers = JSON.parse(localStorage.getItem(teamKey)) || [];
     
+    // If no team members exist, create some demo team members
+    if (teamMembers.length === 0) {
+        createDemoTeamMembers();
+    }
+    
     // Populate team selection in project form
     populateTeamSelection();
+}
+
+function createDemoTeamMembers() {
+    const demoMembers = [
+        { id: '1001', name: 'John Smith', role: 'Developer' },
+        { id: '1002', name: 'Emily Johnson', role: 'Designer' },
+        { id: '1003', name: 'Michael Brown', role: 'Project Manager' },
+        { id: '1004', name: 'Sarah Davis', role: 'QA Engineer' }
+    ];
+    
+    teamMembers = demoMembers;
+    const teamKey = `orangeAcademyTeam_${currentUser.userId}`;
+    localStorage.setItem(teamKey, JSON.stringify(teamMembers));
 }
 
 function populateTeamSelection() {
@@ -530,6 +608,163 @@ function getTeamMember(id) {
 }
 
 // ==============================================
+// SIDEBAR & UI FUNCTIONS 
+// ==============================================
+function initSidebar() {
+    if (toggleSidebarBtn) {
+        toggleSidebarBtn.addEventListener('click', function() {
+            const sidebar = document.querySelector('.sidebar');
+            if (sidebar) {
+                sidebar.classList.toggle('open');
+            }
+        });
+    }
+}
+
+function updateRecentProjectsNav() {
+    if (!recentProjectsNavElement) return;
+    
+    // Clear previous content
+    recentProjectsNavElement.innerHTML = '';
+    
+    if (projects.length === 0) {
+        recentProjectsNavElement.innerHTML = '<div class="nav-placeholder-message">No projects yet</div>';
+        return;
+    }
+    
+    // Sort projects by updated date (most recent first)
+    const recentProjects = [...projects]
+        .sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt))
+        .slice(0, 5); // Show only top 5
+    
+    // Create nav items
+    recentProjects.forEach(p => {
+        const projectLink = document.createElement('a');
+        projectLink.href = `project-details.html?id=${p.id}`;
+        projectLink.className = 'nav-item';
+        
+        // Status icon
+        const statusIcon = document.createElement('i');
+        
+        switch(p.status.toLowerCase()) {
+            case 'not started':
+                statusIcon.className = 'fas fa-circle-dot';
+                break;
+            case 'in progress':
+                statusIcon.className = 'fas fa-circle-play';
+                break;
+            case 'on hold':
+                statusIcon.className = 'fas fa-circle-pause';
+                break;
+            case 'completed':
+                statusIcon.className = 'fas fa-circle-check';
+                break;
+            case 'cancelled':
+                statusIcon.className = 'fas fa-circle-xmark';
+                break;
+            default:
+                statusIcon.className = 'fas fa-circle';
+        }
+        
+        // Set icon color based on status
+        statusIcon.style.color = `var(--status-${getStatusClass(p.status)})`;
+        
+        // Project name
+        const projectName = document.createTextNode(p.name);
+        
+        projectLink.appendChild(statusIcon);
+        projectLink.appendChild(projectName);
+        
+        recentProjectsNavElement.appendChild(projectLink);
+    });
+}
+
+function updateUserUI() {
+    if (!userInfoElement || !currentUser) return;
+    
+    // Create initials from user's name
+    const nameParts = currentUser.fullname.split(' ');
+    const initials = nameParts.length > 1 
+        ? (nameParts[0][0] + nameParts[1][0]).toUpperCase() 
+        : nameParts[0].substring(0, 2).toUpperCase();
+    
+    // Update user info in sidebar
+    userInfoElement.innerHTML = `
+        <div class="user-avatar">${initials}</div>
+        <div class="user-details">
+            <div class="user-name">${currentUser.fullname}</div>
+            <div class="user-email">${currentUser.email}</div>
+        </div>
+        <div class="user-dropdown">
+            <i class="fas fa-chevron-down"></i>
+        </div>
+    `;
+    
+    // Add dropdown menu and functionality
+    setupUserDropdown(userInfoElement);
+}
+
+function setupUserDropdown(userInfoElement) {
+    // Remove any existing dropdown menu
+    const existingMenu = document.getElementById('user-dropdown-menu');
+    if (existingMenu) {
+        existingMenu.remove();
+    }
+    
+    // Find the user profile container
+    const userProfile = document.querySelector('.user-profile');
+    if (!userProfile) return;
+    
+    // Create dropdown menu
+    const userMenu = document.createElement('div');
+    userMenu.id = 'user-dropdown-menu';
+    userMenu.className = 'user-menu';
+    userMenu.style.display = 'none';
+    
+    userMenu.innerHTML = `
+        <a href="#" class="user-menu-item" id="profile-btn">
+            <i class="fas fa-user-circle"></i> Profile
+        </a>
+        <a href="#" class="user-menu-item" id="settings-btn">
+            <i class="fas fa-cog"></i> Settings
+        </a>
+        <div class="user-menu-divider"></div>
+        <a href="#" class="user-menu-item" id="logout-btn">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
+    `;
+    
+    userProfile.appendChild(userMenu);
+    
+    // Add logout event handler
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            logout();
+        });
+    }
+    
+    // Toggle menu visibility
+    userInfoElement.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const isVisible = userMenu.style.display === 'block';
+        userMenu.style.display = isVisible ? 'none' : 'block';
+    });
+    
+    // Close menu when clicking outside
+    document.addEventListener('click', function(e) {
+        if (userMenu.style.display === 'block' &&
+            !userInfoElement.contains(e.target) && 
+            !userMenu.contains(e.target)) {
+            userMenu.style.display = 'none';
+        }
+    });
+}
+
+// ==============================================
 // USER AUTHENTICATION FUNCTIONS
 // ==============================================
 function isLoggedIn() {
@@ -548,58 +783,15 @@ function getCurrentUser() {
     };
 }
 
-function updateUserUI() {
-    const user = getCurrentUser();
-    if (!user) return;
-    
-    // Update the navigation with user info
-    const navLinks = document.querySelector('.nav-links');
-    if (!navLinks) return;
-    
-    // Check if user info already exists
-    if (!navLinks.querySelector('.user-info')) {
-        // Add user info link
-        const userInfoLink = document.createElement('a');
-        userInfoLink.href = '#';
-        userInfoLink.className = 'user-info';
-        userInfoLink.innerHTML = `<i class="fas fa-user"></i> ${user.fullname}`;
-        navLinks.appendChild(userInfoLink);
-        
-        // Add logout link
-        const logoutLink = document.createElement('a');
-        logoutLink.href = '#';
-        logoutLink.innerHTML = `<i class="fas fa-sign-out-alt"></i> Logout`;
-        logoutLink.addEventListener('click', function(e) {
-            e.preventDefault();
-            logout();
-        });
-        navLinks.appendChild(logoutLink);
-    }
-}
-
 function logout() {
-    localStorage.removeItem('orangeAcademySession');
-    window.location.href = 'login.html';
-}
-
-// ==============================================
-// MOBILE NAVIGATION
-// ==============================================
-function initMobileMenu() {
-    const menuToggle = document.getElementById('menu-toggle');
-    const navLinks = document.querySelector('.nav-links');
-    
-    if (menuToggle && navLinks) {
-        menuToggle.addEventListener('click', () => {
-            navLinks.classList.toggle('open');
-            
-            // Animate hamburger
-            const spans = menuToggle.querySelectorAll('span');
-            if (spans.length >= 3) {
-                spans[0].classList.toggle('rotate-down');
-                spans[1].classList.toggle('fade-out');
-                spans[2].classList.toggle('rotate-up');
-            }
-        });
+    if (confirm('Are you sure you want to log out?')) {
+        localStorage.removeItem('orangeAcademySession');
+        
+        document.body.style.opacity = '0';
+        document.body.style.transition = 'opacity 0.5s';
+        
+        setTimeout(() => {
+            window.location.href = 'login.html';
+        }, 500);
     }
 }

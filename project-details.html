@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Details - Orange Project Manager</title>
+    <link rel="stylesheet" href="css/obsidian.css">
+    <link rel="stylesheet" href="css/project-details.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <img src="orange logo.webp" alt="Logo" class="sidebar-logo">
+                <h2>Project Manager</h2>
+            </div>
+            
+            <!-- User info at top of sidebar -->
+            <div class="user-profile">
+                <div class="user-info" id="user-info">
+                    <!-- User info will be inserted here -->
+                </div>
+            </div>
+            
+            <!-- Navigation -->
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <h3 class="nav-title">Workspace</h3>
+                    <a href="dashboard.html" class="nav-item">
+                        <i class="fas fa-columns"></i>Dashboard
+                    </a>
+                    <a href="projects.html" class="nav-item active">
+                        <i class="fas fa-project-diagram"></i>Projects
+                    </a>
+                    <a href="calendar.html" class="nav-item">
+                        <i class="fas fa-calendar-alt"></i>Calendar
+                    </a>
+                    <a href="team.html" class="nav-item">
+                        <i class="fas fa-users"></i>Team
+                    </a>
+                </div>
+                
+                <div class="nav-section">
+                    <h3 class="nav-title">Recent Projects</h3>
+                    <div id="recent-projects-nav">
+                        <!-- Recent projects will be inserted here -->
+                    </div>
+                </div>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <a href="#" id="new-project-btn" class="new-project-btn">
+                    <i class="fas fa-plus"></i> New Project
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <button id="toggle-sidebar" class="toggle-sidebar">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="breadcrumbs">
+                    <a href="dashboard.html">Dashboard</a>
+                    <i class="fas fa-chevron-right"></i>
+                    <a href="projects.html">Projects</a>
+                    <i class="fas fa-chevron-right"></i>
+                    <span id="project-title-breadcrumb">Project Title</span>
+                </div>
+                <div class="view-controls">
+                    <a href="projects.html" class="btn-back">
+                        <i class="fas fa-arrow-left"></i> Back to Projects
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Content Container -->
+            <div class="content-container">
+                <!-- Project Overview -->
+                <div class="project-header">
+                    <div class="project-title-section">
+                        <h1 id="project-title">Project Title</h1>
+                        <span id="project-status" class="status-badge status-progress">In Progress</span>
+                    </div>
+                    
+                    <div class="project-actions">
+                        <button id="edit-project-btn" class="btn-icon">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button id="delete-project-btn" class="btn-icon">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Project Info -->
+                <div class="project-info">
+                    <div class="info-card">
+                        <div class="info-row">
+                            <div class="info-label">
+                                <i class="fas fa-calendar-alt"></i>
+                                <span>Duration</span>
+                            </div>
+                            <div class="info-value" id="project-duration">June 1, 2025 - July 31, 2025</div>
+                        </div>
+                        
+                        <div class="info-row">
+                            <div class="info-label">
+                                <i class="fas fa-clock"></i>
+                                <span>Time Remaining</span>
+                            </div>
+                            <div class="info-value" id="time-remaining">30 days left</div>
+                        </div>
+                        
+                        <div class="info-row">
+                            <div class="info-label">
+                                <i class="fas fa-users"></i>
+                                <span>Team</span>
+                            </div>
+                            <div class="info-value team-avatars" id="project-team">
+                                <!-- Team members will be inserted here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progress Section -->
+                <div class="progress-section">
+                    <div class="progress-header">
+                        <h3>Progress Overview</h3>
+                        <div id="progress-percentage" class="progress-percentage">0%</div>
+                    </div>
+                    <div class="progress-bar">
+                        <div id="progress-fill" class="progress-fill" style="width: 0%;"></div>
+                    </div>
+                    <div class="progress-stats">
+                        <div class="stat-item">
+                            <span id="completed-tasks">0</span> completed
+                        </div>
+                        <div class="stat-item">
+                            <span id="pending-tasks">0</span> pending
+                        </div>
+                        <div class="stat-item">
+                            <span id="total-tasks">0</span> total tasks
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="project-details-section">
+                    <div class="details-header">
+                        <h2>Description</h2>
+                    </div>
+                    <div id="project-description" class="details-content">
+                        <!-- Project description will be inserted here -->
+                    </div>
+                </div>
+                
+                <!-- Tasks Section -->
+                <div class="tasks-section">
+                    <div class="tasks-header">
+                        <h2>Tasks</h2>
+                        <button id="add-task-btn" class="btn-primary">
+                            <i class="fas fa-plus"></i> Add Task
+                        </button>
+                    </div>
+                    
+                    <div class="tasks-filter">
+                        <div class="filter-group">
+                            <label for="task-filter">Filter:</label>
+                            <select id="task-filter">
+                                <option value="all" selected>All Tasks</option>
+                                <option value="pending">Pending</option>
+                                <option value="completed">Completed</option>
+                            </select>
+                        </div>
+                        
+                        <div class="search-group">
+                            <input type="text" id="task-search" placeholder="Search tasks...">
+                            <i class="fas fa-search"></i>
+                        </div>
+                    </div>
+                    
+                    <div id="tasks-container" class="tasks-container">
+                        <!-- Tasks will be inserted here -->
+                        <div class="empty-tasks">
+                            <i class="fas fa-tasks"></i>
+                            <p>No tasks yet. Add your first task to get started.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Task Modal -->
+    <div class="modal" id="task-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="task-modal-title">Add New Task</h2>
+                <button class="close-modal" id="close-task-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="task-form">
+                    <div class="form-group">
+                        <label for="task-name">Task Name</label>
+                        <input type="text" id="task-name" required placeholder="Enter task name">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="task-description">Description</label>
+                        <textarea id="task-description" rows="3" placeholder="Task description..."></textarea>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label for="task-due-date">Due Date</label>
+                            <input type="date" id="task-due-date" required>
+                        </div>
+                        
+                        <div class="form-group half">
+                            <label for="task-priority">Priority</label>
+                            <select id="task-priority">
+                                <option value="low">Low</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="high">High</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="task-assignee">Assign To</label>
+                        <select id="task-assignee" disabled>
+                            <option value="">Team member assignment temporarily disabled</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" id="cancel-task" class="btn-secondary">Cancel</button>
+                        <button type="submit" id="save-task" class="btn-primary">Save Task</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Project Edit Modal -->
+    <div class="modal" id="project-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Edit Project</h2>
+                <button class="close-modal" id="close-project-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="project-form">
+                    <div class="form-group">
+                        <label for="project-name">Project Name</label>
+                        <input type="text" id="project-name" placeholder="Enter project name" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="project-description">Description</label>
+                        <textarea id="project-description" placeholder="Project description..." rows="3"></textarea>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label for="project-start-date">Start Date</label>
+                            <input type="date" id="project-start-date" required>
+                        </div>
+                        
+                        <div class="form-group half">
+                            <label for="project-deadline">Deadline</label>
+                            <input type="date" id="project-deadline" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="project-status">Status</label>
+                        <select id="project-status">
+                            <option value="not started">Not Started</option>
+                            <option value="in progress">In Progress</option>
+                            <option value="on hold">On Hold</option>
+                            <option value="completed">Completed</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="team-selection">Team Members</label>
+                        <div id="team-selection" class="team-selection">
+                            <p>Team member selection temporarily disabled</p>
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" id="cancel-project" class="btn-secondary">Cancel</button>
+                        <button type="submit" id="save-project" class="btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script src="js/obsidian.js"></script>
+    <script src="js/project-details.js"></script>
+    <script>
+        function updateRecentProjectsNav() {
+            const recentProjectsNavElement = document.getElementById('recent-projects-nav');
+            if (!recentProjectsNavElement) return;
+            
+            // Get current user
+            const currentUser = getCurrentUser();
+            if (!currentUser || !currentUser.userId) {
+                recentProjectsNavElement.innerHTML = '<div class="nav-placeholder-message">Sign in to see recent projects</div>';
+                return;
+            }
+            
+            // Clear previous content
+            recentProjectsNavElement.innerHTML = '';
+            
+            // Get projects from local storage
+            const projectsKey = `orangeAcademyProjects_${currentUser.userId}`;
+            const projectsList = JSON.parse(localStorage.getItem(projectsKey)) || [];
+            
+            if (projectsList.length === 0) {
+                recentProjectsNavElement.innerHTML = '<div class="nav-placeholder-message">No projects yet</div>';
+                return;
+            }
+            
+            // Sort projects by updated date (most recent first)
+            const recentProjects = [...projectsList]
+                .sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt))
+                .slice(0, 5); // Show only top 5
+            
+            // Create nav items
+            recentProjects.forEach(p => {
+                const projectLink = document.createElement('a');
+                projectLink.href = `project-details.html?id=${p.id}`;
+                projectLink.className = 'nav-item';
+                
+                // Add active class if we're on the project details page for this project
+                if (currentProjectId && p.id === currentProjectId) {
+                    projectLink.classList.add('active');
+                }
+                
+                // Status icon
+                const statusIcon = document.createElement('i');
+                
+                switch(p.status.toLowerCase()) {
+                    case 'not started':
+                        statusIcon.className = 'fas fa-circle-dot';
+                        break;
+                    case 'in progress':
+                        statusIcon.className = 'fas fa-circle-play';
+                        break;
+                    case 'on hold':
+                        statusIcon.className = 'fas fa-circle-pause';
+                        break;
+                    case 'completed':
+                        statusIcon.className = 'fas fa-circle-check';
+                        break;
+                    case 'cancelled':
+                        statusIcon.className = 'fas fa-circle-xmark';
+                        break;
+                    default:
+                        statusIcon.className = 'fas fa-circle';
+                }
+                
+                // Set icon color based on status
+                statusIcon.style.color = `var(--status-${getStatusClass(p.status)})`;
+                
+                // Project name
+                const projectName = document.createTextNode(p.name);
+                
+                projectLink.appendChild(statusIcon);
+                projectLink.appendChild(projectName);
+                
+                recentProjectsNavElement.appendChild(projectLink);
+            });
+        }
+    </script>
+</body>
+</html>

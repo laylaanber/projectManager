@@ -73,20 +73,19 @@ function setupEventListeners() {
     // Navigation items
     navItems.forEach(item => {
         item.addEventListener('click', function(e) {
+            // Allow regular navigation through href attributes to work normally
+            if (this.getAttribute('href') && 
+                (this.getAttribute('href').includes('.html') || 
+                 this.getAttribute('href').startsWith('http'))) {
+                // Allow default navigation
+                return;
+            }
+            
+            // For data-view based navigation (now mainly for view controls)
             e.preventDefault();
-            
-            // Set active nav item
-            navItems.forEach(nav => nav.classList.remove('active'));
-            this.classList.add('active');
-            
-            // Show corresponding content view
             const view = this.getAttribute('data-view');
-            contentViews.forEach(content => content.classList.remove('active'));
-            document.getElementById(`${view}-view`).classList.add('active');
-            
-            // On mobile, close sidebar after navigation
-            if (window.innerWidth < 768) {
-                sidebar.classList.remove('open');
+            if (view) {
+                changeView(view);
             }
         });
     });
@@ -366,7 +365,7 @@ function updateProjectsTimeline() {
     
     // If no projects, show message
     if (!projects.length) {
-        projectsTimelineElement.innerHTML = '<p class="empty-state">No projects to display.</p>';
+        projectsTimelineElement.innerHTML = '<div class="empty-message">No projects to display</div>';
         return;
     }
     
@@ -376,29 +375,26 @@ function updateProjectsTimeline() {
     
     projects.forEach(project => {
         const startDate = new Date(project.startDate);
-        const endDate = new Date(project.deadline);
+        const deadlineDate = new Date(project.deadline);
         
         if (startDate < earliestDate) earliestDate = startDate;
-        if (endDate > latestDate) latestDate = endDate;
+        if (deadlineDate > latestDate) latestDate = deadlineDate;
     });
     
     // Ensure we have at least 3 months of timeline
     const minEndDate = new Date(earliestDate);
     minEndDate.setMonth(minEndDate.getMonth() + 3);
-    if (latestDate < minEndDate) latestDate = minEndDate;
+    if (latestDate < minEndDate) {
+        latestDate = minEndDate;
+    }
     
     // Add some padding
-    earliestDate.setDate(1); // Start at the beginning of the month
-    latestDate.setMonth(latestDate.getMonth() + 1, 0); // End at the end of the month
+    earliestDate.setDate(1); // Start from the 1st of the month
+    latestDate.setMonth(latestDate.getMonth() + 1, 0); // End at the last day of the month
     
     // Create timeline container
     const timeline = document.createElement('div');
     timeline.className = 'timeline';
-    
-    // Create months for the header
-    const months = [];
-    const startMonth = new Date(earliestDate);
-    const endMonth = new Date(latestDate);
     
     // Create month headers
     const timelineHeader = document.createElement('div');
@@ -410,6 +406,10 @@ function updateProjectsTimeline() {
     timelineHeader.appendChild(emptyCell);
     
     // Get all months between start and end
+    const months = [];
+    const startMonth = new Date(earliestDate);
+    const endMonth = new Date(latestDate);
+    
     while (startMonth <= endMonth) {
         const month = startMonth.toLocaleString('default', { month: 'short', year: 'numeric' });
         months.push(new Date(startMonth));
@@ -430,41 +430,45 @@ function updateProjectsTimeline() {
     // Create project rows
     projects.forEach(project => {
         const projectStartDate = new Date(project.startDate);
-        const projectEndDate = new Date(project.deadline);
+        const projectDeadline = new Date(project.deadline);
         
+        // Calculate position and width
+        const startOffset = Math.ceil((projectStartDate - earliestDate) / (1000 * 60 * 60 * 24));
+        const duration = Math.ceil((projectDeadline - projectStartDate) / (1000 * 60 * 60 * 24)) + 1;
+        
+        const startPercent = (startOffset / totalDays) * 100;
+        const widthPercent = (duration / totalDays) * 100;
+        
+        // Create row
         const timelineRow = document.createElement('div');
         timelineRow.className = 'timeline-row';
         
-        const rowLabel = document.createElement('div');
-        rowLabel.className = 'timeline-row-label';
-        rowLabel.textContent = project.name;
-        rowLabel.title = project.name;
+        // Project name
+        const projectLabel = document.createElement('div');
+        projectLabel.className = 'timeline-row-label';
+        projectLabel.textContent = project.name;
+        projectLabel.title = project.name;
+        timelineRow.appendChild(projectLabel);
         
-        const rowTrack = document.createElement('div');
-        rowTrack.className = 'timeline-row-track';
+        // Project timeline track
+        const timelineTrack = document.createElement('div');
+        timelineTrack.className = 'timeline-row-track';
+        timelineRow.appendChild(timelineTrack);
         
-        // Calculate position and width
-        const startDayOffset = Math.ceil((projectStartDate - earliestDate) / (1000 * 60 * 60 * 24));
-        const duration = Math.ceil((projectEndDate - projectStartDate) / (1000 * 60 * 60 * 24)) + 1;
+        // Project timeline bar
+        const timelineBar = document.createElement('div');
+        timelineBar.className = `timeline-bar timeline-bar-${getStatusClass(project.status)}`;
+        timelineBar.style.left = `${startPercent}%`;
+        timelineBar.style.width = `${widthPercent}%`;
+        timelineBar.title = `${project.name}: ${formatDate(projectStartDate)} - ${formatDate(projectDeadline)}`;
         
-        const leftPosition = (startDayOffset / totalDays) * 100;
-        const width = (duration / totalDays) * 100;
-        
-        // Create the timeline bar
-        const bar = document.createElement('div');
-        bar.className = `timeline-bar timeline-bar-${getStatusClass(project.status)}`;
-        bar.style.left = `${leftPosition}%`;
-        bar.style.width = `${width}%`;
-        bar.title = `${project.name}\nStart: ${formatDate(projectStartDate)}\nEnd: ${formatDate(projectEndDate)}\nStatus: ${project.status}`;
-        
-        // Add click handler
-        bar.addEventListener('click', () => {
+        // Make the bar clickable to view project details
+        timelineBar.addEventListener('click', () => {
             window.location.href = `project-details.html?id=${project.id}`;
         });
         
-        rowTrack.appendChild(bar);
-        timelineRow.appendChild(rowLabel);
-        timelineRow.appendChild(rowTrack);
+        timelineTrack.appendChild(timelineBar);
+        
         timeline.appendChild(timelineRow);
     });
     
@@ -474,32 +478,46 @@ function updateProjectsTimeline() {
 function updateRecentProjectsNav() {
     if (!recentProjectsNavElement) return;
     
-    // Remove placeholders
-    recentProjectsNavElement.innerHTML = '';
-    
-    // If no projects, show message
-    if (!projects.length) {
-        const emptyMessage = document.createElement('div');
-        emptyMessage.className = 'nav-placeholder-message';
-        emptyMessage.textContent = 'No projects yet';
-        recentProjectsNavElement.appendChild(emptyMessage);
+    // Use currentUser instead of projectDetailUser, which is only defined in project-details.js
+    if (!currentUser || !currentUser.userId) {
+        console.error("User information not available for recent projects");
         return;
     }
     
-    // Sort projects by created date (most recent first)
-    const recentProjects = [...projects]
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    // Clear previous content
+    recentProjectsNavElement.innerHTML = '';
+    
+    // Get projects from local storage
+    const projectsKey = `orangeAcademyProjects_${currentUser.userId}`;
+    const projectsList = JSON.parse(localStorage.getItem(projectsKey)) || [];
+    
+    if (projectsList.length === 0) {
+        recentProjectsNavElement.innerHTML = '<div class="nav-placeholder-message">No projects yet</div>';
+        return;
+    }
+    
+    // Sort projects by updated date (most recent first)
+    const recentProjects = [...projectsList]
+        .sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt))
         .slice(0, 5); // Show only top 5
     
-    recentProjects.forEach(project => {
+    // Create nav items
+    recentProjects.forEach(p => {
         const projectLink = document.createElement('a');
-        projectLink.href = `project-details.html?id=${project.id}`;
+        projectLink.href = `project-details.html?id=${p.id}`;
         projectLink.className = 'nav-item';
+        
+        // Add active class if we're on the project details page for this project
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentProjectId = urlParams.get('id');
+        if (currentProjectId && p.id === currentProjectId) {
+            projectLink.classList.add('active');
+        }
         
         // Status icon
         const statusIcon = document.createElement('i');
         
-        switch(project.status.toLowerCase()) {
+        switch(p.status.toLowerCase()) {
             case 'not started':
                 statusIcon.className = 'fas fa-circle-dot';
                 break;
@@ -520,10 +538,10 @@ function updateRecentProjectsNav() {
         }
         
         // Set icon color based on status
-        statusIcon.style.color = `var(--status-${getStatusClass(project.status)})`;
+        statusIcon.style.color = `var(--status-${getStatusClass(p.status)})`;
         
         // Project name
-        const projectName = document.createTextNode(project.name);
+        const projectName = document.createTextNode(p.name);
         
         projectLink.appendChild(statusIcon);
         projectLink.appendChild(projectName);

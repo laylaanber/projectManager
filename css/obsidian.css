@@ -645,11 +645,18 @@ body {
     height: 24px;
     border-radius: 4px;
     cursor: pointer;
-    transition: transform 0.2s;
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    min-width: 10px; /* Ensure very short projects are still visible */
 }
 
 .timeline-bar:hover {
     transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    z-index: 10;
 }
 
 .timeline-bar-not-started { background-color: var(--status-not-started); }
@@ -952,4 +959,49 @@ textarea:focus {
     .search-container {
         max-width: none;
     }
+}
+
+/* ====================================
+   CONTENT PLACEHOLDER
+   ==================================== */
+.content-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    text-align: center;
+    background-color: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+}
+
+.content-placeholder i {
+    font-size: 64px;
+    color: var(--accent-orange);
+    opacity: 0.5;
+    margin-bottom: 24px;
+}
+
+.content-placeholder h2 {
+    font-size: 24px;
+    font-weight: 500;
+    margin-bottom: 12px;
+    color: var(--text-primary);
+}
+
+.content-placeholder p {
+    font-size: 16px;
+    color: var(--text-secondary);
+    max-width: 400px;
+}
+
+/* ====================================
+   EMPTY MESSAGE
+   ==================================== */
+.empty-message {
+    padding: 20px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 14px;
 }
