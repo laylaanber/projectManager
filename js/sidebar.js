@@ -111,4 +111,51 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+    
+    // Add this at the end
+    setupTouchEvents();
 });
+
+// Add this to your existing sidebar.js code
+function setupTouchEvents() {
+    // Touch swipe detection for mobile
+    let touchStartX = 0;
+    const mainContent = document.querySelector('.main-content');
+    const sidebar = document.querySelector('.sidebar');
+    
+    if (mainContent && sidebar) {
+        // Detect swipe right to open sidebar
+        mainContent.addEventListener('touchstart', function(e) {
+            touchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+        
+        mainContent.addEventListener('touchend', function(e) {
+            const touchEndX = e.changedTouches[0].screenX;
+            const diff = touchEndX - touchStartX;
+            
+            // If swipe right > 70px and starting near the left edge
+            if (diff > 70 && touchStartX < 50) {
+                sidebar.classList.add('open');
+                const overlay = document.getElementById('sidebar-overlay');
+                if (overlay) overlay.style.display = 'block';
+            }
+        }, { passive: true });
+        
+        // Detect swipe left to close sidebar
+        sidebar.addEventListener('touchstart', function(e) {
+            touchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+        
+        sidebar.addEventListener('touchend', function(e) {
+            const touchEndX = e.changedTouches[0].screenX;
+            const diff = touchStartX - touchEndX;
+            
+            // If swipe left > 70px
+            if (diff > 70) {
+                sidebar.classList.remove('open');
+                const overlay = document.getElementById('sidebar-overlay');
+                if (overlay) overlay.style.display = 'none';
+            }
+        }, { passive: true });
+    }
+}

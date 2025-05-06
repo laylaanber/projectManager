@@ -1004,3 +1004,21 @@ function capitalizeFirstLetter(string) {
     if (!string) return '';
     return string.charAt(0).toUpperCase() + string.slice(1);
 }
+
+// Add this JavaScript to your project-details.js or projects.js
+document.addEventListener('DOMContentLoaded', function() {
+    const mobileActionBtn = document.getElementById('mobile-action-btn');
+    
+    if (mobileActionBtn) {
+        mobileActionBtn.addEventListener('click', function() {
+            // On projects page, open new project modal
+            if (window.location.href.includes('projects.html')) {
+                openProjectModal();
+            }
+            // On project details page, open new task modal
+            else if (window.location.href.includes('project-details.html')) {
+                openTaskModal();
+            }
+        });
+    }
+});

@@ -1189,3 +1189,257 @@ textarea:focus {
         pointer-events: none;
     }
 }
+
+/* Enhanced Responsive Design - Add at the end of the file */
+
+/* Extra small devices (phones, under 576px) */
+@media screen and (max-width: 575.98px) {
+    .content-container {
+        padding: 15px 10px;
+    }
+    
+    .view-header h1 {
+        font-size: 20px;
+    }
+    
+    .modal-content {
+        width: 95%;
+        margin: 0 auto;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .form-actions button {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    
+    .tasks-filter {
+        padding: 10px;
+    }
+    
+    .search-group {
+        width: 100%;
+    }
+    
+    .project-actions {
+        gap: 8px;
+    }
+    
+    .btn-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 14px;
+    }
+}
+
+/* Small devices (tablets, 576px to 767px) */
+@media screen and (min-width: 576px) and (max-width: 767.98px) {
+    .two-column {
+        grid-template-columns: 1fr;
+    }
+    
+    .tasks-filter {
+        flex-direction: column;
+        gap: 10px;
+    }
+}
+
+/* Medium devices (tablets, 768px to 991px) */
+@media screen and (min-width: 768px) and (max-width: 991.98px) {
+    .sidebar {
+        width: 240px;
+    }
+    
+    .projects-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Large devices (desktops, 992px and up) */
+@media screen and (min-width: 992px) {
+    .projects-grid {
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    }
+}
+
+/* Improve touch targets for mobile */
+@media (pointer: coarse) {
+    .nav-item, 
+    .btn-primary, 
+    .btn-secondary, 
+    .btn-icon,
+    .task-checkbox,
+    select,
+    .team-checkbox {
+        min-height: 44px;
+    }
+    
+    .nav-item {
+        padding: 10px 20px;
+    }
+    
+    .top-bar .toggle-sidebar {
+        padding: 12px;
+    }
+    
+    select {
+        padding-top: 8px;
+        padding-bottom: 8px;
+    }
+    
+    /* Easier tapping on form controls */
+    .form-group {
+        margin-bottom: 24px;
+    }
+}
+
+/* Dark mode media query support */
+@media (prefers-color-scheme: dark) {
+    /* Your site already uses dark theme by default,
+       but we can add specific adjustments here if needed */
+}
+
+/* Print styles */
+@media print {
+    .sidebar, 
+    .top-bar, 
+    .project-actions, 
+    .btn-icon,
+    .modal {
+        display: none !important;
+    }
+    
+    .app-container, 
+    .main-content {
+        display: block;
+        width: 100%;
+        overflow: visible;
+    }
+    
+    body {
+        background-color: white;
+        color: black;
+    }
+    
+    .content-container {
+        padding: 0;
+    }
+    
+    /* Ensure text content is visible in black */
+    .project-description,
+    .task-description,
+    .info-value,
+    .details-content {
+        color: black !important;
+    }
+}
+
+/* Add these responsive refinements */
+
+@media screen and (max-width: 480px) {
+    .auth-container {
+        padding: 10px;
+    }
+    
+    .auth-card {
+        padding: 15px;
+        margin: 0 10px;
+    }
+    
+    .auth-header h1 {
+        font-size: 22px;
+    }
+    
+    .form-group {
+        margin-bottom: 15px;
+    }
+    
+    .input-with-icon input {
+        font-size: 14px;
+        padding: 10px 10px 10px 36px;
+    }
+    
+    .form-options {
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+    }
+}
+
+@media screen and (min-width: 481px) and (max-width: 768px) {
+    .auth-card {
+        padding: 20px;
+        max-width: 400px;
+    }
+}
+
+/* Responsive improvements for all sizes */
+@media screen and (max-height: 700px) {
+    .auth-header {
+        margin-bottom: 15px;
+    }
+    
+    .auth-logo img {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .auth-form {
+        gap: 15px;
+    }
+}
+
+/* Touch device optimization */
+@media (pointer: coarse) {
+    .input-with-icon input,
+    .btn-primary,
+    .toggle-password {
+        min-height: 44px;
+    }
+    
+    .remember-me {
+        padding: 5px 0;
+    }
+    
+    .remember-me input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+    }
+}
+
+/* Add this to your CSS for the floating action button */
+
+.floating-action-btn {
+    display: none; /* Hidden by default */
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    z-index: 990;
+}
+
+.floating-action-btn button {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background-color: var(--accent-orange);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.floating-action-btn i {
+    font-size: 24px;
+}
+
+@media screen and (max-width: 768px) {
+    .floating-action-btn {
+        display: block;
+    }
+}

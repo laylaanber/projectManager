@@ -295,3 +295,71 @@
         align-self: flex-start;
     }
 }
+
+/* Add to enhance mobile view of complex elements */
+
+/* Responsive table adjustments */
+@media screen and (max-width: 767.98px) {
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Card-based layout for projects on mobile */
+    .projects-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .project-card {
+        margin-bottom: 15px;
+    }
+    
+    /* Adjust team members display on small screens */
+    .team-members {
+        max-width: 150px;
+    }
+    
+    .project-details .detail-group {
+        flex-direction: column;
+        margin-bottom: 15px;
+    }
+    
+    .project-details .detail-label {
+        width: auto;
+        margin-bottom: 5px;
+    }
+    
+    /* Stack filter options vertically */
+    .filter-options {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .filter-options select {
+        width: 100%;
+    }
+}
+
+/* Adjust spacing for project details on small screens */
+@media screen and (max-width: 480px) {
+    .project-header {
+        padding: 12px;
+    }
+    
+    .project-body {
+        padding: 12px;
+    }
+    
+    .project-footer {
+        padding: 10px 12px;
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+    }
+    
+    .btn-view-project,
+    .btn-edit-project,
+    .btn-delete-project {
+        padding: 8px 12px;
+    }
+}
