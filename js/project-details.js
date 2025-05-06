@@ -98,11 +98,40 @@ function setupEventListeners() {
     if (closeTaskModalBtn) closeTaskModalBtn.addEventListener('click', closeTaskModal);
     if (cancelTaskBtn) cancelTaskBtn.addEventListener('click', closeTaskModal);
     
-    if (taskForm) {
-        taskForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            saveTask();
-        });
+    // Properly handle the task form submission
+    // Use let instead of const for taskForm if you need to reassign it
+    let taskFormElement = document.getElementById('task-form');
+    
+    if (taskFormElement) {
+        // Add a single event listener - no need to clone the form
+        // Just make sure this setup runs only once
+        if (!taskFormElement.hasAttribute('data-listener-attached')) {
+            taskFormElement.setAttribute('data-listener-attached', 'true');
+            
+            taskFormElement.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Prevent double submission
+                if (this.dataset.submitting === 'true') {
+                    console.log('Already submitting, preventing duplicate');
+                    return;
+                }
+                
+                // Mark as submitting
+                this.dataset.submitting = 'true';
+                console.log('Saving task...');
+                
+                // Save the task
+                saveTask();
+                
+                // Reset submitting flag after a delay
+                setTimeout(() => {
+                    this.dataset.submitting = 'false';
+                }, 500);
+            });
+            
+            console.log('Task form event listener attached');
+        }
     }
     
     // Task filtering
@@ -505,6 +534,8 @@ function closeTaskModal() {
 }
 
 function saveTask() {
+    console.log('saveTask function called');
+    
     // Get form data
     const name = taskNameInput.value.trim();
     const description = taskDescriptionInput.value.trim();
@@ -517,8 +548,24 @@ function saveTask() {
         return;
     }
     
+    // Check if currentProject and its tasks exist
+    if (!currentProject) {
+        console.error('Current project not found');
+        return;
+    }
+    
+    // Initialize tasks array if needed
+    if (!currentProject.tasks) {
+        currentProject.tasks = [];
+    }
+    
+    // Generate a truly unique ID
+    const uniqueId = 'task_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+    console.log('Generated task ID:', uniqueId);
+    
     if (editingTaskId) {
         // Update existing task
+        console.log('Updating existing task:', editingTaskId);
         const taskIndex = currentProject.tasks.findIndex(t => t.id === editingTaskId);
         if (taskIndex !== -1) {
             currentProject.tasks[taskIndex] = {
@@ -527,14 +574,14 @@ function saveTask() {
                 description,
                 dueDate,
                 priority,
-                assignee: '',
                 updatedAt: new Date().toISOString()
             };
         }
     } else {
-        // Create new task
+        // Create new task with unique ID
+        console.log('Creating new task');
         const newTask = {
-            id: Date.now().toString(),
+            id: uniqueId,
             name,
             description,
             dueDate,
@@ -544,12 +591,9 @@ function saveTask() {
             createdAt: new Date().toISOString()
         };
         
-        // Initialize tasks array if needed
-        if (!currentProject.tasks) {
-            currentProject.tasks = [];
-        }
-        
+        // Add the task
         currentProject.tasks.push(newTask);
+        console.log('Added new task:', newTask);
     }
     
     // Save project with updated tasks
