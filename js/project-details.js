@@ -1,12 +1,19 @@
 /**
- * Project Details Controller
- * Handles all functionality for the project details page
+ * PROJECT DETAILS CONTROLLER
+ * 
+ * This file manages all functionality for the project details page, including:
+ * - Project information display
+ * - Task management (create, edit, delete)
+ * - Progress tracking
+ * - Status updates
  */
 
-// DOM Elements
+// --------------------------------------------------------------------------
+// DOM ELEMENT REFERENCES
+// --------------------------------------------------------------------------
 const projectTitleElement = document.getElementById('project-title');
 const projectTitleBreadcrumb = document.getElementById('project-title-breadcrumb');
-const projectStatusElement = document.getElementById('project-status');
+const projectStatusElement = document.getElementById('project-status-badge');
 const projectDurationElement = document.getElementById('project-duration');
 const timeRemainingElement = document.getElementById('time-remaining');
 const projectTeamElement = document.getElementById('project-team');
@@ -34,74 +41,63 @@ const taskSearchInput = document.getElementById('task-search');
 const editProjectBtn = document.getElementById('edit-project-btn');
 const deleteProjectBtn = document.getElementById('delete-project-btn');
 
-// Application State - Using different variable names to avoid conflicts
-let projectDetailUser = null;
-let currentProject = null;
-let editingTaskId = null;
-let currentProjectId = null;
+// --------------------------------------------------------------------------
+// APPLICATION STATE
+// --------------------------------------------------------------------------
+let projectDetailUser = null;  // Current logged-in user
+let currentProject = null;     // Currently displayed project
+let editingTaskId = null;      // ID of task being edited, null if creating new
+let currentProjectId = null;   // ID of current project, extracted from URL
 
-// ==============================================
+// --------------------------------------------------------------------------
 // INITIALIZATION
-// ==============================================
+// --------------------------------------------------------------------------
 document.addEventListener('DOMContentLoaded', function() {
-    // Check authentication
+    // Redirect to login if not authenticated
     if (!isLoggedIn()) {
         window.location.href = 'login.html';
         return;
     }
     
-    // Get current user
+    // Get current user information
     projectDetailUser = getCurrentUser();
     
-    // Get project ID from URL
+    // Extract project ID from URL parameters
     const urlParams = new URLSearchParams(window.location.search);
     currentProjectId = urlParams.get('id');
     
+    // Redirect to projects list if no ID provided
     if (!currentProjectId) {
-        // No project ID provided, redirect to projects list
         window.location.href = 'projects.html';
         return;
     }
 
-    // Load project data
+    // Load project data and initialize UI
     loadProject();
     
-    // Only after project is loaded, continue with the rest
     if (currentProject) {
-        // Set up event listeners
         setupEventListeners();
-        
-        // Update UI with user info
         updateUserInfo();
-        
-        // Set up sidebar navigation
         setupSidebarNavigation();
     } else {
         console.error("Failed to load project data");
     }
 });
 
-// ==============================================
-// EVENT LISTENERS
-// ==============================================
+// --------------------------------------------------------------------------
+// EVENT HANDLERS
+// --------------------------------------------------------------------------
 function setupEventListeners() {
-    // Add task button
+    // Task management events
     if (addTaskBtn) {
         addTaskBtn.addEventListener('click', function() {
             openTaskModal();
         });
     }
     
-    // Close task modal
-    if (closeTaskModalBtn) {
-        closeTaskModalBtn.addEventListener('click', closeTaskModal);
-    }
+    if (closeTaskModalBtn) closeTaskModalBtn.addEventListener('click', closeTaskModal);
+    if (cancelTaskBtn) cancelTaskBtn.addEventListener('click', closeTaskModal);
     
-    if (cancelTaskBtn) {
-        cancelTaskBtn.addEventListener('click', closeTaskModal);
-    }
-    
-    // Save task form
     if (taskForm) {
         taskForm.addEventListener('submit', function(e) {
             e.preventDefault();
@@ -109,29 +105,22 @@ function setupEventListeners() {
         });
     }
     
-    // Filter tasks
-    if (taskFilterSelect) {
-        taskFilterSelect.addEventListener('change', filterTasks);
-    }
+    // Task filtering
+    if (taskFilterSelect) taskFilterSelect.addEventListener('change', filterTasks);
+    if (taskSearchInput) taskSearchInput.addEventListener('input', filterTasks);
     
-    // Search tasks
-    if (taskSearchInput) {
-        taskSearchInput.addEventListener('input', filterTasks);
-    }
-    
-    // Edit project button
+    // Project management
     if (editProjectBtn) {
         editProjectBtn.addEventListener('click', function() {
             openEditProjectModal();
         });
     }
     
-    // Delete project button
     if (deleteProjectBtn) {
         deleteProjectBtn.addEventListener('click', deleteProject);
     }
     
-    // Close modal when clicking outside
+    // Modal behavior - close when clicking outside
     window.addEventListener('click', function(e) {
         if (taskModal && e.target === taskModal) {
             closeTaskModal();
@@ -143,49 +132,36 @@ function setupEventListeners() {
         }
     });
     
-    // Toggle sidebar on mobile
+    // Mobile sidebar toggle
     const toggleSidebarBtn = document.getElementById('toggle-sidebar');
     if (toggleSidebarBtn) {
         toggleSidebarBtn.addEventListener('click', function() {
             const sidebar = document.querySelector('.sidebar');
-            if (sidebar) {
-                sidebar.classList.toggle('open');
-            }
+            if (sidebar) sidebar.classList.toggle('open');
         });
     }
 }
 
 function setupSidebarNavigation() {
-    // Make sure sidebar links work properly
-    const dashboardLink = document.querySelector('a[href="dashboard.html"]');
-    if (dashboardLink) {
-        dashboardLink.addEventListener('click', function() {
-            window.location.href = 'dashboard.html';
-        });
-    }
+    // Configure sidebar navigation links
+    const navLinks = {
+        'dashboard': 'dashboard.html',
+        'projects': 'projects.html',
+        'calendar': 'calendar.html',
+        'team': 'team.html'
+    };
     
-    const projectsLink = document.querySelector('a[href="projects.html"]');
-    if (projectsLink) {
-        projectsLink.addEventListener('click', function() {
-            window.location.href = 'projects.html';
-        });
-    }
+    // Add click handlers for navigation links
+    Object.entries(navLinks).forEach(([id, url]) => {
+        const link = document.querySelector(`a[href="${url}"]`);
+        if (link) {
+            link.addEventListener('click', function() {
+                window.location.href = url;
+            });
+        }
+    });
     
-    const calendarLink = document.querySelector('a[href="calendar.html"]');
-    if (calendarLink) {
-        calendarLink.addEventListener('click', function() {
-            window.location.href = 'calendar.html';
-        });
-    }
-    
-    const teamLink = document.querySelector('a[href="team.html"]');
-    if (teamLink) {
-        teamLink.addEventListener('click', function() {
-            window.location.href = 'team.html';
-        });
-    }
-    
-    // New project button in sidebar
+    // New project button
     const newProjectBtn = document.getElementById('new-project-btn');
     if (newProjectBtn) {
         newProjectBtn.addEventListener('click', function(e) {
@@ -195,64 +171,54 @@ function setupSidebarNavigation() {
     }
 }
 
-// ==============================================
-// PROJECT FUNCTIONS
-// ==============================================
+// --------------------------------------------------------------------------
+// PROJECT MANAGEMENT
+// --------------------------------------------------------------------------
 function loadProject() {
-    // Get projects from localStorage
+    // Get all projects from localStorage
     const projectsKey = `orangeAcademyProjects_${projectDetailUser.userId}`;
     const projects = JSON.parse(localStorage.getItem(projectsKey)) || [];
     
-    // Find the current project
+    // Find the requested project
     currentProject = projects.find(p => p.id === currentProjectId);
     
     if (!currentProject) {
-        // Project not found, redirect to projects list
         alert('Project not found');
         window.location.href = 'projects.html';
         return;
     }
     
-    // Initialize tasks array if it doesn't exist
-    if (!currentProject.tasks) {
-        currentProject.tasks = [];
-    }
+    // Ensure tasks array exists
+    if (!currentProject.tasks) currentProject.tasks = [];
     
-    // Update page title
+    // Set page title with project name
     document.title = `${currentProject.name} - Orange Project Manager`;
     
-    // Update UI with project data
+    // Update UI components
     updateProjectUI();
 }
 
 function updateProjectUI() {
-    // Set project title
-    if (projectTitleElement) {
-        projectTitleElement.textContent = currentProject.name;
-    }
+    // Update project title elements
+    if (projectTitleElement) projectTitleElement.textContent = currentProject.name;
+    if (projectTitleBreadcrumb) projectTitleBreadcrumb.textContent = currentProject.name;
     
-    if (projectTitleBreadcrumb) {
-        projectTitleBreadcrumb.textContent = currentProject.name;
-    }
-    
-    // Set project status - Add more debugging
+    // Update status badge
     if (projectStatusElement) {
-        console.log("Current project status in updateProjectUI:", currentProject.status);
-        projectStatusElement.textContent = capitalizeFirstLetter(currentProject.status);
-        const statusClass = getStatusClass(currentProject.status);
-        console.log("Getting status class for:", currentProject.status, "result:", statusClass);
+        const currentStatus = currentProject.status || 'not started';
+        projectStatusElement.textContent = capitalizeFirstLetter(currentStatus);
+        const statusClass = getStatusClass(currentStatus);
         projectStatusElement.className = `status-badge status-${statusClass}`;
-        console.log("Applied status class:", statusClass);
     }
     
-    // Set project duration
+    // Update project timeline information
     if (projectDurationElement) {
         const startDate = formatDate(new Date(currentProject.startDate));
         const endDate = formatDate(new Date(currentProject.deadline));
         projectDurationElement.textContent = `${startDate} - ${endDate}`;
     }
     
-    // Set time remaining
+    // Update time remaining indicator
     if (timeRemainingElement) {
         const timeRemaining = getTimeRemaining(currentProject.deadline);
         if (timeRemaining.overdue) {
@@ -260,52 +226,260 @@ function updateProjectUI() {
             timeRemainingElement.classList.add('overdue');
         } else {
             timeRemainingElement.textContent = `${timeRemaining.days} days left`;
-            if (timeRemaining.days <= 7) {
-                timeRemainingElement.classList.add('urgent');
-            }
+            if (timeRemaining.days <= 7) timeRemainingElement.classList.add('urgent');
         }
     }
     
-    // Set project team - simplified approach
+    // Update team members
     if (projectTeamElement) {
         projectTeamElement.innerHTML = 'Team functionality temporarily disabled';
     }
     
-    // Set project description
+    // Update project description
     if (projectDescriptionElement) {
         projectDescriptionElement.textContent = currentProject.description || 'No description provided';
     }
     
-    // Update progress indicators
+    // Update progress visualization and task counts
     updateProgressIndicators();
     
-    // Render tasks
+    // Render task list
     renderTasks();
     
-    // Update document title to reflect status changes
+    // Update page title to show project and status
     document.title = `${currentProject.name} (${capitalizeFirstLetter(currentProject.status)}) - Orange Project Manager`;
 }
 
-// ==============================================
-// TASK FUNCTIONS
-// ==============================================
+function saveProject() {
+    // Validate required data
+    if (!projectDetailUser || !projectDetailUser.userId || !currentProject || !currentProject.id) {
+        console.error("Cannot save project: Missing user or project information");
+        return;
+    }
+
+    // Get all projects
+    const projectsKey = `orangeAcademyProjects_${projectDetailUser.userId}`;
+    const projects = JSON.parse(localStorage.getItem(projectsKey)) || [];
+    
+    // Find this project in the array
+    const projectIndex = projects.findIndex(p => p.id === currentProject.id);
+    
+    if (projectIndex !== -1) {
+        // Update project in array
+        projects[projectIndex] = {
+            ...currentProject,
+            updatedAt: new Date().toISOString()
+        };
+        
+        // Save to localStorage
+        localStorage.setItem(projectsKey, JSON.stringify(projects));
+    } else {
+        console.error(`Project with ID ${currentProject.id} not found in storage`);
+    }
+}
+
+function openEditProjectModal() {
+    // Get project modal
+    const projectModal = document.getElementById('project-modal');
+    if (!projectModal) return;
+    
+    // Ensure currentProject exists
+    if (!currentProject) return;
+    
+    // Fill in project form with current values
+    const projectNameInput = document.getElementById('project-name');
+    const projectDescInput = document.getElementById('project-description');
+    const projectStartDateInput = document.getElementById('project-start-date');
+    const projectDeadlineInput = document.getElementById('project-deadline');
+    const projectStatusInput = document.getElementById('project-status');
+    
+    if (projectNameInput) projectNameInput.value = currentProject.name || '';
+    if (projectDescInput) projectDescInput.value = currentProject.description || '';
+    if (projectStartDateInput) projectStartDateInput.value = currentProject.startDate || '';
+    if (projectDeadlineInput) projectDeadlineInput.value = currentProject.deadline || '';
+    
+    // Set dropdown to current status
+    if (projectStatusInput) {
+        projectStatusInput.value = currentProject.status || 'not started';
+    }
+    
+    // Team selection (disabled in this version)
+    const teamSelectionDiv = document.getElementById('team-selection');
+    if (teamSelectionDiv) {
+        teamSelectionDiv.innerHTML = '<p>Team member selection is temporarily disabled</p>';
+    }
+    
+    // Update modal title and save button
+    const modalTitle = document.getElementById('modal-title');
+    const saveButton = document.getElementById('save-project');
+    
+    if (modalTitle) modalTitle.textContent = 'Edit Project';
+    if (saveButton) saveButton.textContent = 'Save Changes';
+    
+    // Show modal
+    projectModal.style.display = 'block';
+    
+    // Reset event listeners to prevent duplicates
+    
+    // 1. Close button
+    const closeProjectModalBtn = document.getElementById('close-project-modal');
+    if (closeProjectModalBtn) {
+        const newCloseBtn = closeProjectModalBtn.cloneNode(true);
+        closeProjectModalBtn.parentNode.replaceChild(newCloseBtn, closeProjectModalBtn);
+        
+        newCloseBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            projectModal.style.display = 'none';
+        });
+    }
+    
+    // 2. Cancel button
+    const cancelProjectBtn = document.getElementById('cancel-project');
+    if (cancelProjectBtn) {
+        const newCancelBtn = cancelProjectBtn.cloneNode(true);
+        cancelProjectBtn.parentNode.replaceChild(newCancelBtn, cancelProjectBtn);
+        
+        newCancelBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            projectModal.style.display = 'none';
+        });
+    }
+    
+    // 3. Form submission
+    const projectForm = document.getElementById('project-form');
+    if (projectForm) {
+        const newForm = projectForm.cloneNode(true);
+        projectForm.parentNode.replaceChild(newForm, projectForm);
+        
+        // Reattach event listeners to buttons in the cloned form
+        const newCloseBtn = newForm.querySelector('#close-project-modal');
+        const newCancelBtn = newForm.querySelector('#cancel-project');
+        
+        if (newCloseBtn) {
+            newCloseBtn.addEventListener('click', function() {
+                projectModal.style.display = 'none';
+            });
+        }
+        
+        if (newCancelBtn) {
+            newCancelBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                projectModal.style.display = 'none';
+            });
+        }
+        
+        // Add submit event listener
+        newForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveProjectChanges();
+        });
+    }
+}
+
+function saveProjectChanges() {
+    // Get form input values
+    const projectNameInput = document.getElementById('project-name');
+    const projectDescInput = document.getElementById('project-description');
+    const projectStartDateInput = document.getElementById('project-start-date');
+    const projectDeadlineInput = document.getElementById('project-deadline');
+    const statusDropdown = document.getElementById('project-status');
+    
+    // Validate required fields
+    if (!projectNameInput || !projectNameInput.value.trim()) {
+        alert('Project name is required');
+        return;
+    }
+    
+    if (!projectStartDateInput || !projectStartDateInput.value) {
+        alert('Start date is required');
+        return;
+    }
+    
+    if (!projectDeadlineInput || !projectDeadlineInput.value) {
+        alert('Deadline is required');
+        return;
+    }
+    
+    // Get status from dropdown
+    let selectedStatus = 'not started'; // Default
+    if (statusDropdown && statusDropdown.tagName === 'SELECT') {
+        selectedStatus = statusDropdown.value;
+    }
+    
+    // Keep the existing team
+    const currentTeam = currentProject.team || [];
+    
+    // Create a clean copy of the project with updates
+    const updatedProject = JSON.parse(JSON.stringify(currentProject));
+    updatedProject.name = projectNameInput.value.trim();
+    updatedProject.description = projectDescInput ? projectDescInput.value.trim() : '';
+    updatedProject.startDate = projectStartDateInput.value;
+    updatedProject.deadline = projectDeadlineInput.value;
+    updatedProject.status = selectedStatus;
+    updatedProject.team = currentTeam;
+    updatedProject.updatedAt = new Date().toISOString();
+    
+    // Replace current project with updated version
+    currentProject = updatedProject;
+    
+    // Save project to localStorage
+    saveProject();
+    
+    // Update status badge immediately
+    if (projectStatusElement) {
+        projectStatusElement.textContent = capitalizeFirstLetter(selectedStatus);
+        const statusClass = getStatusClass(selectedStatus);
+        projectStatusElement.className = `status-badge status-${statusClass}`;
+    }
+    
+    // Refresh entire UI
+    updateProjectUI();
+    
+    // Hide modal
+    const projectModal = document.getElementById('project-modal');
+    if (projectModal) {
+        projectModal.style.display = 'none';
+    }
+}
+
+function deleteProject() {
+    if (confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
+        // Get projects from localStorage
+        const projectsKey = `orangeAcademyProjects_${projectDetailUser.userId}`;
+        const projects = JSON.parse(localStorage.getItem(projectsKey)) || [];
+        
+        // Filter out the current project
+        const updatedProjects = projects.filter(p => p.id !== currentProject.id);
+        
+        // Save updated list to localStorage
+        localStorage.setItem(projectsKey, JSON.stringify(updatedProjects));
+        
+        // Return to projects list
+        window.location.href = 'projects.html';
+    }
+}
+
+// --------------------------------------------------------------------------
+// TASK MANAGEMENT
+// --------------------------------------------------------------------------
 function openTaskModal(taskId = null) {
     if (!taskModal || !taskForm) return;
 
-    // Reset form
+    // Reset form to default values
     taskForm.reset();
     
-    // Set default due date (tomorrow)
+    // Set default due date to tomorrow
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     taskDueDateInput.value = tomorrow.toISOString().split('T')[0];
     
-    // Check if editing existing task
+    // Check if editing existing task or creating new
     if (taskId) {
         editingTaskId = taskId;
         taskModalTitle.textContent = 'Edit Task';
         
-        // Find task
+        // Find and populate form with task data
         const task = currentProject.tasks.find(t => t.id === taskId);
         if (task) {
             taskNameInput.value = task.name;
@@ -318,11 +492,12 @@ function openTaskModal(taskId = null) {
         taskModalTitle.textContent = 'Add New Task';
     }
     
-    // Show modal
+    // Display the modal
     taskModal.style.display = 'block';
 }
 
 function closeTaskModal() {
+    // Hide modal and reset editing state
     if (taskModal) {
         taskModal.style.display = 'none';
     }
@@ -335,9 +510,8 @@ function saveTask() {
     const description = taskDescriptionInput.value.trim();
     const dueDate = taskDueDateInput.value;
     const priority = taskPriorityInput.value;
-    const assignee = ''; // No assignee for now
     
-    // Validate input
+    // Validate required fields
     if (!name || !dueDate) {
         alert('Please fill in all required fields');
         return;
@@ -353,7 +527,7 @@ function saveTask() {
                 description,
                 dueDate,
                 priority,
-                assignee,
+                assignee: '',
                 updatedAt: new Date().toISOString()
             };
         }
@@ -365,12 +539,12 @@ function saveTask() {
             description,
             dueDate,
             priority,
-            assignee,
+            assignee: '',
             completed: false,
             createdAt: new Date().toISOString()
         };
         
-        // Initialize tasks array if it doesn't exist
+        // Initialize tasks array if needed
         if (!currentProject.tasks) {
             currentProject.tasks = [];
         }
@@ -378,9 +552,11 @@ function saveTask() {
         currentProject.tasks.push(newTask);
     }
     
-    // Save project and update UI
+    // Save project with updated tasks
     saveProject();
     closeTaskModal();
+    
+    // Update UI components
     updateProgressIndicators();
     renderTasks();
 }
@@ -390,7 +566,7 @@ function renderTasks() {
     
     tasksContainer.innerHTML = '';
     
-    // If no tasks, show empty state
+    // Show empty state if no tasks
     if (!currentProject.tasks || currentProject.tasks.length === 0) {
         tasksContainer.innerHTML = `
             <div class="empty-tasks">
@@ -401,10 +577,10 @@ function renderTasks() {
         return;
     }
     
-    // Clone tasks array to avoid modifying the original
+    // Create a working copy of tasks
     let tasksToRender = [...currentProject.tasks];
     
-    // Apply filters
+    // Apply filtering
     const filterValue = taskFilterSelect ? taskFilterSelect.value : 'all';
     const searchTerm = taskSearchInput ? taskSearchInput.value.toLowerCase().trim() : '';
     
@@ -421,7 +597,7 @@ function renderTasks() {
         );
     }
     
-    // Sort tasks: completed at the bottom, then by due date (earliest first)
+    // Sort tasks: incomplete first, then by due date
     tasksToRender.sort((a, b) => {
         if (a.completed && !b.completed) return 1;
         if (!a.completed && b.completed) return -1;
@@ -434,7 +610,7 @@ function renderTasks() {
         tasksContainer.appendChild(taskCard);
     });
     
-    // If filtered results are empty
+    // Show 'no results' message if filtered to empty
     if (tasksToRender.length === 0) {
         tasksContainer.innerHTML = `
             <div class="empty-tasks">
@@ -445,20 +621,199 @@ function renderTasks() {
     }
 }
 
-// Include all the other necessary functions from your code...
+function createTaskCard(task) {
+    // Create task card container
+    const taskCard = document.createElement('div');
+    taskCard.className = 'task-card';
+    taskCard.dataset.id = task.id;
+    
+    // Check if task is overdue
+    const now = new Date();
+    const dueDate = new Date(task.dueDate);
+    const isOverdue = !task.completed && dueDate < now;
+    
+    // Build task card HTML
+    taskCard.innerHTML = `
+        <div class="task-header">
+            <div class="task-title">
+                <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''}>
+                <span class="task-name">${task.name}</span>
+            </div>
+            <div class="task-actions">
+                <button class="task-btn edit" title="Edit Task">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="task-btn delete" title="Delete Task">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+        <div class="task-details">
+            <div class="task-description">${task.description || 'No description provided'}</div>
+            <div class="task-meta">
+                <div class="task-meta-item ${isOverdue ? 'overdue' : ''}">
+                    <i class="fas fa-calendar"></i>
+                    <span>${formatDate(dueDate)}</span>
+                </div>
+                <div class="task-meta-item priority-${task.priority}">
+                    <i class="fas fa-flag"></i>
+                    <span>${capitalizeFirstLetter(task.priority)} Priority</span>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Add event listeners to interactive elements
+    
+    // Task completion toggle
+    const taskCheckbox = taskCard.querySelector('.task-checkbox');
+    taskCheckbox.addEventListener('change', function() {
+        toggleTaskCompletion(task.id, this.checked);
+    });
+    
+    // Edit button
+    const editBtn = taskCard.querySelector('.task-btn.edit');
+    editBtn.addEventListener('click', () => openTaskModal(task.id));
+    
+    // Delete button
+    const deleteBtn = taskCard.querySelector('.task-btn.delete');
+    deleteBtn.addEventListener('click', () => deleteTask(task.id));
+    
+    return taskCard;
+}
 
-// Utility functions to avoid conflicts with obsidian.js
+function toggleTaskCompletion(taskId, completed) {
+    // Find task in project
+    const taskIndex = currentProject.tasks.findIndex(t => t.id === taskId);
+    if (taskIndex === -1) return;
+    
+    // Update completion status
+    currentProject.tasks[taskIndex].completed = completed;
+    
+    // Track completion time
+    if (completed) {
+        currentProject.tasks[taskIndex].completedAt = new Date().toISOString();
+    } else {
+        delete currentProject.tasks[taskIndex].completedAt;
+    }
+    
+    // Save changes and update UI
+    saveProject();
+    updateProgressIndicators();
+    renderTasks();
+}
+
+function deleteTask(taskId) {
+    if (confirm('Are you sure you want to delete this task?')) {
+        // Remove task from project
+        currentProject.tasks = currentProject.tasks.filter(task => task.id !== taskId);
+        
+        // Save changes and update UI
+        saveProject();
+        updateProgressIndicators();
+        renderTasks();
+    }
+}
+
+function filterTasks() {
+    // Re-render tasks with current filter settings
+    renderTasks();
+}
+
+// --------------------------------------------------------------------------
+// PROGRESS TRACKING
+// --------------------------------------------------------------------------
+function updateProgressIndicators() {
+    // Calculate task completion statistics
+    let completedCount = 0;
+    let totalCount = 0;
+    
+    if (currentProject.tasks && currentProject.tasks.length > 0) {
+        totalCount = currentProject.tasks.length;
+        completedCount = currentProject.tasks.filter(task => task.completed).length;
+    }
+    
+    // Calculate progress percentage
+    const progressPercentage = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+    const pendingCount = totalCount - completedCount;
+    
+    // Auto-update project status based on progress
+    if (totalCount > 0) {
+        const oldStatus = currentProject.status;
+        
+        // If all tasks complete, set to completed
+        if (progressPercentage === 100 && currentProject.status !== 'completed') {
+            currentProject.status = 'completed';
+            
+            // Update the status badge in the UI
+            if (projectStatusElement) {
+                projectStatusElement.textContent = capitalizeFirstLetter(currentProject.status);
+                const statusClass = getStatusClass(currentProject.status);
+                projectStatusElement.className = `status-badge status-${statusClass}`;
+            }
+            
+            saveProject();
+        } 
+        // If any tasks incomplete but status is completed, revert to in progress
+        else if (progressPercentage < 100 && currentProject.status === 'completed') {
+            currentProject.status = 'in progress';
+            
+            // Update the status badge in the UI
+            if (projectStatusElement) {
+                projectStatusElement.textContent = capitalizeFirstLetter(currentProject.status);
+                const statusClass = getStatusClass(currentProject.status);
+                projectStatusElement.className = `status-badge status-${statusClass}`;
+            }
+            
+            saveProject();
+        }
+    }
+    
+    // Update progress visualization
+    if (progressPercentageElement) {
+        progressPercentageElement.textContent = `${progressPercentage}%`;
+    }
+    
+    if (progressFillElement) {
+        progressFillElement.style.width = `${progressPercentage}%`;
+        
+        // Change color based on completion level
+        if (progressPercentage === 100) {
+            progressFillElement.style.backgroundColor = 'var(--status-completed)';
+        } else if (progressPercentage >= 75) {
+            progressFillElement.style.backgroundColor = 'var(--accent-blue)';
+        } else if (progressPercentage >= 50) {
+            progressFillElement.style.backgroundColor = 'var(--accent-orange)';
+        } else if (progressPercentage >= 25) {
+            progressFillElement.style.backgroundColor = 'var(--status-hold)';
+        } else {
+            progressFillElement.style.backgroundColor = 'var(--status-progress)';
+        }
+    }
+    
+    // Update task counters
+    if (completedTasksElement) completedTasksElement.textContent = completedCount;
+    if (pendingTasksElement) pendingTasksElement.textContent = pendingCount;
+    if (totalTasksElement) totalTasksElement.textContent = totalCount;
+    
+    // Update document title to reflect project status
+    document.title = `${currentProject.name} (${capitalizeFirstLetter(currentProject.status)}) - Orange Project Manager`;
+}
+
+// --------------------------------------------------------------------------
+// USER INTERFACE UTILITIES
+// --------------------------------------------------------------------------
 function updateUserInfo() {
     const userInfoElement = document.getElementById('user-info');
     if (!userInfoElement || !projectDetailUser) return;
     
-    // Create initials from user's name
+    // Create user avatar initials
     const nameParts = projectDetailUser.fullname.split(' ');
     const initials = nameParts.length > 1 
         ? (nameParts[0][0] + nameParts[1][0]).toUpperCase() 
         : nameParts[0].substring(0, 2).toUpperCase();
     
-    // Update user info in sidebar
+    // Update user display in sidebar
     userInfoElement.innerHTML = `
         <div class="user-avatar">${initials}</div>
         <div class="user-details">
@@ -470,18 +825,14 @@ function updateUserInfo() {
         </div>
     `;
     
-    // Add dropdown menu and functionality
     setupUserDropdown(userInfoElement);
 }
 
 function setupUserDropdown(userInfoElement) {
-    // Remove any existing dropdown menu
+    // Remove any existing dropdown
     const existingMenu = document.getElementById('user-dropdown-menu');
-    if (existingMenu) {
-        existingMenu.remove();
-    }
+    if (existingMenu) existingMenu.remove();
     
-    // Find the user profile container
     const userProfile = document.querySelector('.user-profile');
     if (!userProfile) return;
     
@@ -491,6 +842,7 @@ function setupUserDropdown(userInfoElement) {
     userMenu.className = 'user-menu';
     userMenu.style.display = 'none';
     
+    // Menu items
     userMenu.innerHTML = `
         <a href="#" class="user-menu-item" id="profile-btn">
             <i class="fas fa-user-circle"></i> Profile
@@ -534,10 +886,14 @@ function setupUserDropdown(userInfoElement) {
     });
 }
 
+// --------------------------------------------------------------------------
+// AUTHENTICATION
+// --------------------------------------------------------------------------
 function logoutUser() {
     if (confirm('Are you sure you want to log out?')) {
         localStorage.removeItem('orangeAcademySession');
         
+        // Add fade-out transition
         document.body.style.opacity = '0';
         document.body.style.transition = 'opacity 0.5s';
         
@@ -561,450 +917,21 @@ function getCurrentUser() {
     };
 }
 
-// Add all the missing function implementations...
-
-// Add these functions at the end of the file
-
-function createTaskCard(task) {
-    const taskCard = document.createElement('div');
-    taskCard.className = 'task-card';
-    taskCard.dataset.id = task.id;
-    
-    // Get assignee name if available - simplified
-    let assigneeName = 'Unassigned';
-    
-    // Check if task is overdue
-    const now = new Date();
-    const dueDate = new Date(task.dueDate);
-    const isOverdue = !task.completed && dueDate < now;
-    
-    // Create task card HTML
-    taskCard.innerHTML = `
-        <div class="task-header">
-            <div class="task-title">
-                <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''}>
-                <span class="task-name">${task.name}</span>
-            </div>
-            <div class="task-actions">
-                <button class="task-btn edit" title="Edit Task">
-                    <i class="fas fa-edit"></i>
-                </button>
-                <button class="task-btn delete" title="Delete Task">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </div>
-        </div>
-        <div class="task-details">
-            <div class="task-description">${task.description || 'No description provided'}</div>
-            <div class="task-meta">
-                <div class="task-meta-item ${isOverdue ? 'overdue' : ''}">
-                    <i class="fas fa-calendar"></i>
-                    <span>${formatDate(dueDate)}</span>
-                </div>
-                <div class="task-meta-item priority-${task.priority}">
-                    <i class="fas fa-flag"></i>
-                    <span>${capitalizeFirstLetter(task.priority)} Priority</span>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    // Task checkbox event
-    const taskCheckbox = taskCard.querySelector('.task-checkbox');
-    taskCheckbox.addEventListener('change', function() {
-        toggleTaskCompletion(task.id, this.checked);
-    });
-    
-    // Edit button event
-    const editBtn = taskCard.querySelector('.task-btn.edit');
-    editBtn.addEventListener('click', () => openTaskModal(task.id));
-    
-    // Delete button event
-    const deleteBtn = taskCard.querySelector('.task-btn.delete');
-    deleteBtn.addEventListener('click', () => deleteTask(task.id));
-    
-    return taskCard;
-}
-
-function toggleTaskCompletion(taskId, completed) {
-    // Find task index
-    const taskIndex = currentProject.tasks.findIndex(t => t.id === taskId);
-    if (taskIndex === -1) return;
-    
-    // Update task completion status
-    currentProject.tasks[taskIndex].completed = completed;
-    
-    // If task is completed, update completion timestamp
-    if (completed) {
-        currentProject.tasks[taskIndex].completedAt = new Date().toISOString();
-    } else {
-        delete currentProject.tasks[taskIndex].completedAt;
-    }
-    
-    // Save project
-    saveProject();
-    
-    // Update UI
-    updateProgressIndicators();
-    renderTasks();
-}
-
-function deleteTask(taskId) {
-    if (confirm('Are you sure you want to delete this task?')) {
-        // Remove task from project
-        currentProject.tasks = currentProject.tasks.filter(task => task.id !== taskId);
-        
-        // Save project and update UI
-        saveProject();
-        updateProgressIndicators();
-        renderTasks();
-    }
-}
-
-function filterTasks() {
-    renderTasks();
-}
-
-function saveProject() {
-    if (!projectDetailUser || !projectDetailUser.userId || !currentProject || !currentProject.id) {
-        console.error("Cannot save project: Missing user or project information");
-        return;
-    }
-
-    // Get projects from localStorage
-    const projectsKey = `orangeAcademyProjects_${projectDetailUser.userId}`;
-    const projects = JSON.parse(localStorage.getItem(projectsKey)) || [];
-    
-    // Find project index
-    const projectIndex = projects.findIndex(p => p.id === currentProject.id);
-    
-    if (projectIndex !== -1) {
-        // Update project in array
-        projects[projectIndex] = {
-            ...currentProject,
-            updatedAt: new Date().toISOString()
-        };
-        
-        // Save to localStorage
-        localStorage.setItem(projectsKey, JSON.stringify(projects));
-        
-        // Log success for debugging
-        console.log(`Project "${currentProject.name}" saved successfully with status "${currentProject.status}"`);
-    } else {
-        console.error(`Project with ID ${currentProject.id} not found in storage`);
-    }
-}
-
-function updateProgressIndicators() {
-    let completedCount = 0;
-    let totalCount = 0;
-    
-    if (currentProject.tasks && currentProject.tasks.length > 0) {
-        totalCount = currentProject.tasks.length;
-        completedCount = currentProject.tasks.filter(task => task.completed).length;
-    }
-    
-    const progressPercentage = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
-    const pendingCount = totalCount - completedCount;
-    
-    // Update UI elements
-    if (progressPercentageElement) {
-        progressPercentageElement.textContent = `${progressPercentage}%`;
-    }
-    
-    if (progressFillElement) {
-        progressFillElement.style.width = `${progressPercentage}%`;
-        
-        // Change color based on completion
-        if (progressPercentage === 100) {
-            progressFillElement.style.backgroundColor = 'var(--status-completed)';
-        } else if (progressPercentage >= 75) {
-            progressFillElement.style.backgroundColor = 'var(--accent-blue)';
-        } else if (progressPercentage >= 50) {
-            progressFillElement.style.backgroundColor = 'var(--accent-orange)';
-        } else if (progressPercentage >= 25) {
-            progressFillElement.style.backgroundColor = 'var(--status-hold)';
-        } else {
-            progressFillElement.style.backgroundColor = 'var(--status-progress)';
-        }
-    }
-    
-    if (completedTasksElement) {
-        completedTasksElement.textContent = completedCount;
-    }
-    
-    if (pendingTasksElement) {
-        pendingTasksElement.textContent = pendingCount;
-    }
-    
-    if (totalTasksElement) {
-        totalTasksElement.textContent = totalCount;
-    }
-}
-
-function openEditProjectModal() {
-    // Get project modal
-    const projectModal = document.getElementById('project-modal');
-    if (!projectModal) {
-        console.error("Project modal element not found");
-        return;
-    }
-    
-    // Make sure currentProject exists
-    if (!currentProject) {
-        console.error("No project loaded to edit");
-        return;
-    }
-    
-    // Fill in project details
-    const projectNameInput = document.getElementById('project-name');
-    const projectDescInput = document.getElementById('project-description');
-    const projectStartDateInput = document.getElementById('project-start-date');
-    const projectDeadlineInput = document.getElementById('project-deadline');
-    
-    // Use let instead of const for projectStatusInput so we can reassign it if needed
-    let projectStatusInput = document.getElementById('project-status');
-    
-    if (projectNameInput) projectNameInput.value = currentProject.name || '';
-    if (projectDescInput) projectDescInput.value = currentProject.description || '';
-    if (projectStartDateInput) projectStartDateInput.value = currentProject.startDate || '';
-    if (projectDeadlineInput) projectDeadlineInput.value = currentProject.deadline || '';
-    
-    console.log("Current project status before setting dropdown:", currentProject.status);
-    
-    // Set the current status in the dropdown
-    if (projectStatusInput) {
-        // Directly verify the dropdown element
-        console.log("Dropdown element found:", !!projectStatusInput);
-        console.log("Dropdown options count:", projectStatusInput.options ? projectStatusInput.options.length : "no options");
-        
-        // First ensure the status dropdown has all required options
-        const statusOptions = ['not started', 'in progress', 'on hold', 'completed', 'cancelled'];
-        
-        // Check if we need to recreate the dropdown
-        let needToRecreate = false;
-        
-        if (!projectStatusInput.options || projectStatusInput.options.length === 0) {
-            needToRecreate = true;
-            console.log("Need to recreate dropdown because no options found");
-        }
-        
-        if (needToRecreate) {
-            // Create a new select element
-            const newStatusInput = document.createElement('select');
-            newStatusInput.id = 'project-status';
-            newStatusInput.name = 'project-status'; // Add name attribute
-            
-            // Add the options
-            statusOptions.forEach(status => {
-                const option = document.createElement('option');
-                option.value = status;
-                option.textContent = capitalizeFirstLetter(status);
-                newStatusInput.appendChild(option);
-            });
-            
-            // Replace the old dropdown
-            if (projectStatusInput.parentNode) {
-                projectStatusInput.parentNode.replaceChild(newStatusInput, projectStatusInput);
-                projectStatusInput = newStatusInput;
-                console.log("Dropdown recreated with options:", statusOptions.length);
-            }
-        }
-        
-        // Set the selected status - make sure this happens AFTER recreating if needed
-        console.log("Setting dropdown to:", currentProject.status || 'not started');
-        projectStatusInput.value = currentProject.status || 'not started';
-        
-        // Verify the dropdown value was actually set
-        console.log("Dropdown value after setting:", projectStatusInput.value);
-        
-        // Add specific change event listener to track the value
-        projectStatusInput.addEventListener('change', function() {
-            console.log("Status changed to:", this.value);
-            // Store selected value in a data attribute to ensure it's available when submitting
-            this.setAttribute('data-selected-value', this.value);
-        });
-    }
-    
-    // Handle team selection
-    const teamSelectionDiv = document.getElementById('team-selection');
-    if (teamSelectionDiv) {
-        teamSelectionDiv.innerHTML = '<p>Team member selection is temporarily disabled</p>';
-    }
-    
-    // Update modal title and save button
-    const modalTitle = document.getElementById('modal-title');
-    const saveButton = document.getElementById('save-project');
-    
-    if (modalTitle) modalTitle.textContent = 'Edit Project';
-    if (saveButton) saveButton.textContent = 'Save Changes';
-    
-    // Show modal
-    projectModal.style.display = 'block';
-    
-    // Add event listeners for the modal
-    const closeProjectModalBtn = document.getElementById('close-project-modal');
-    const cancelProjectBtn = document.getElementById('cancel-project');
-    const projectForm = document.getElementById('project-form');
-    
-    if (closeProjectModalBtn) {
-        closeProjectModalBtn.addEventListener('click', function() {
-            projectModal.style.display = 'none';
-        });
-    }
-    
-    if (cancelProjectBtn) {
-        cancelProjectBtn.addEventListener('click', function() {
-            projectModal.style.display = 'none';
-        });
-    }
-    
-    if (projectForm) {
-        // Clone the form to remove any existing event listeners
-        const newForm = projectForm.cloneNode(true);
-        projectForm.parentNode.replaceChild(newForm, projectForm);
-        
-        // Add event listener to the new form
-        newForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // For debugging:
-            const statusValue = document.getElementById('project-status').value;
-            console.log("Selected status on submit:", statusValue);
-            
-            saveProjectChanges();
-        });
-    }
-}
-
-function saveProjectChanges() {
-    // Get form inputs
-    const projectNameInput = document.getElementById('project-name');
-    const projectDescInput = document.getElementById('project-description');
-    const projectStartDateInput = document.getElementById('project-start-date');
-    const projectDeadlineInput = document.getElementById('project-deadline');
-    
-    // Get the status dropdown
-    const projectStatusInput = document.getElementById('project-status');
-    
-    // Validate form
-    if (!projectNameInput || !projectNameInput.value.trim()) {
-        alert('Project name is required');
-        return;
-    }
-    
-    if (!projectStartDateInput || !projectStartDateInput.value) {
-        alert('Start date is required');
-        return;
-    }
-    
-    if (!projectDeadlineInput || !projectDeadlineInput.value) {
-        alert('Deadline is required');
-        return;
-    }
-    
-    // Debug the status dropdown
-    console.log("Status dropdown:", projectStatusInput);
-    
-    // Get the status value using multiple methods to ensure we capture it
-    // Method 1: direct value
-    let selectedStatus = projectStatusInput ? projectStatusInput.value : "not started";
-    console.log("Method 1 - Direct value:", selectedStatus);
-    
-    // Method 2: data attribute if set
-    if (projectStatusInput && projectStatusInput.hasAttribute('data-selected-value')) {
-        selectedStatus = projectStatusInput.getAttribute('data-selected-value');
-        console.log("Method 2 - Data attribute:", selectedStatus);
-    }
-    
-    // Method 3: selected index
-    if (projectStatusInput && projectStatusInput.selectedIndex >= 0) {
-        const selectedOption = projectStatusInput.options[projectStatusInput.selectedIndex];
-        if (selectedOption) {
-            selectedStatus = selectedOption.value;
-            console.log("Method 3 - Selected option:", selectedStatus);
-        }
-    }
-    
-    // Keep the existing team
-    const currentTeam = currentProject.team || [];
-    
-    // Update project data with the selected status
-    currentProject.name = projectNameInput.value.trim();
-    currentProject.description = projectDescInput ? projectDescInput.value.trim() : '';
-    currentProject.startDate = projectStartDateInput.value;
-    currentProject.deadline = projectDeadlineInput.value;
-    currentProject.status = selectedStatus;
-    currentProject.team = currentTeam;
-    currentProject.updatedAt = new Date().toISOString();
-    
-    console.log("Final selected status:", selectedStatus);
-    console.log("Saving project with status:", currentProject.status);
-    
-    // Save project
-    saveProject();
-    
-    // Update UI
-    updateProjectUI();
-    
-    // Hide modal
-    const projectModal = document.getElementById('project-modal');
-    if (projectModal) {
-        projectModal.style.display = 'none';
-    }
-}
-
-function deleteProject() {
-    if (confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
-        // Get projects from localStorage
-        const projectsKey = `orangeAcademyProjects_${projectDetailUser.userId}`;
-        const projects = JSON.parse(localStorage.getItem(projectsKey)) || [];
-        
-        // Remove current project
-        const updatedProjects = projects.filter(p => p.id !== currentProject.id);
-        
-        // Save to localStorage
-        localStorage.setItem(projectsKey, JSON.stringify(updatedProjects));
-        
-        // Redirect to projects page
-        window.location.href = 'projects.html';
-    }
-}
-
-function updateRecentProjectsNav() {
-    const recentProjectsNavElement = document.getElementById('recent-projects-nav');
-    if (!recentProjectsNavElement) return;
-    
-    // Clear previous content
-    recentProjectsNavElement.innerHTML = '';
-    
-    // Simple placeholder message
-    recentProjectsNavElement.innerHTML = '<div class="nav-placeholder-message">Recent projects navigation is temporarily disabled</div>';
-}
-
-// Utility functions
+// --------------------------------------------------------------------------
+// HELPER FUNCTIONS
+// --------------------------------------------------------------------------
 function getStatusClass(status) {
     if (!status) return 'not-started';
-    
-    // Log the input status for debugging
-    console.log("getStatusClass called with:", status);
     
     const statusLower = status.toLowerCase();
     
     switch(statusLower) {
-        case 'not started':
-            return 'not-started';
-        case 'in progress':
-            return 'progress';
-        case 'on hold':
-            return 'hold';
-        case 'completed':
-            return 'completed';
-        case 'cancelled':
-            return 'cancelled';
-        default:
-            console.warn(`Unknown status: "${status}", defaulting to "not-started"`);
-            return 'not-started';
+        case 'not started': return 'not-started';
+        case 'in progress': return 'progress';
+        case 'on hold': return 'hold';
+        case 'completed': return 'completed';
+        case 'cancelled': return 'cancelled';
+        default: return 'not-started';
     }
 }
 
@@ -1030,5 +957,6 @@ function formatDate(date) {
 }
 
 function capitalizeFirstLetter(string) {
+    if (!string) return '';
     return string.charAt(0).toUpperCase() + string.slice(1);
 }

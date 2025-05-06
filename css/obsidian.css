@@ -908,19 +908,55 @@ textarea:focus {
 @media screen and (max-width: 768px) {
     .sidebar {
         position: fixed;
-        left: 0;
         top: 0;
+        left: 0;
+        bottom: 0;
+        width: 260px;
+        background-color: var(--bg-secondary);
         transform: translateX(-100%);
-        z-index: 100;
-        box-shadow: 2px 0 10px var(--shadow-color);
+        transition: transform 0.3s ease;
+        z-index: 1000;
+        overflow-y: auto;
+        box-shadow: none;
     }
     
     .sidebar.open {
         transform: translateX(0);
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
     }
     
     .toggle-sidebar {
         display: block;
+        background: none;
+        border: none;
+        color: var(--text-primary);
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 10px;
+        z-index: 100;
+    }
+    
+    .close-sidebar {
+        display: block;
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        font-size: 1.2rem;
+        cursor: pointer;
+        padding: 5px;
+        z-index: 100;
+    }
+    
+    .sidebar-header {
+        padding-right: 40px;
+    }
+    
+    .sidebar.open + .main-content {
+        opacity: 0.7;
+        pointer-events: none;
     }
 }
 
@@ -946,6 +982,49 @@ textarea:focus {
         transform: translateX(-50%);
         width: calc(100% - 40px);
         max-width: 320px;
+    }
+}
+
+/* Close button for the sidebar in mobile view */
+.close-sidebar {
+    display: none; /* Hidden by default */
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 5px;
+    margin-left: auto;
+    transition: color 0.2s;
+}
+
+.close-sidebar:hover {
+    color: var(--text-primary);
+}
+
+/* Only show close button in mobile view when sidebar is open */
+@media screen and (max-width: 768px) {
+    .sidebar.open .close-sidebar {
+        display: block;
+    }
+    
+    /* Adjust the sidebar header to accommodate the close button */
+    .sidebar.open .sidebar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    /* Add a semi-transparent overlay behind the open sidebar */
+    .sidebar.open::after {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: -1;
     }
 }
 
@@ -1004,4 +1083,109 @@ textarea:focus {
     text-align: center;
     color: var(--text-muted);
     font-size: 14px;
+}
+
+/* Add these specific rules to the end of your CSS file to ensure they have higher priority */
+
+/* Mobile sidebar behavior */
+@media screen and (max-width: 768px) {
+    /* Base sidebar positioning - hidden by default */
+    .sidebar {
+        position: fixed !important;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 280px;
+        transform: translateX(-100%) !important; /* Force it off-screen */
+        z-index: 1000;
+        transition: transform 0.3s ease !important;
+        box-shadow: none;
+    }
+
+    /* When open, show the sidebar */
+    .sidebar.open {
+        transform: translateX(0) !important; /* Force it on-screen */
+        box-shadow: 3px 0 15px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Ensure toggle button is visible */
+    .toggle-sidebar {
+        display: block !important;
+    }
+
+    /* Style for the overlay when sidebar is open */
+    #sidebar-overlay.visible {
+        opacity: 1 !important;
+        visibility: visible !important;
+    }
+}
+
+/* Emergency visible button for testing */
+#emergency-reset {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 10000;
+    padding: 10px;
+    background: #ff6f00;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    display: none;
+    font-size: 14px;
+}
+
+/* Add these specific sidebar rules at the END of your CSS file to override any conflicting styles */
+
+/* Mobile Sidebar Styles */
+@media screen and (max-width: 768px) {
+    /* Base state - sidebar hidden */
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 280px;
+        background: var(--bg-secondary);
+        transform: translateX(-100%); 
+        transition: transform 0.3s ease;
+        z-index: 1000;
+        overflow-y: auto;
+    }
+    
+    /* When sidebar has 'open' class */
+    .sidebar.open {
+        transform: translateX(0);
+        box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.5);
+    }
+    
+    /* Toggle button styling */
+    .toggle-sidebar {
+        display: block;
+        background: none;
+        border: none;
+        color: var(--text-primary);
+        font-size: 20px;
+        cursor: pointer;
+        padding: 8px;
+        margin-right: 10px;
+    }
+    
+    /* Style for close button */
+    .close-sidebar {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        font-size: 18px;
+        cursor: pointer;
+    }
+    
+    /* When sidebar is open, dim the main content */
+    .sidebar.open + .main-content {
+        opacity: 0.5;
+        pointer-events: none;
+    }
 }

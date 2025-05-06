@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Project Details - Orange Project Manager</title>
     <link rel="stylesheet" href="css/obsidian.css">
     <link rel="stylesheet" href="css/project-details.css">
@@ -84,7 +84,7 @@
                 <div class="project-header">
                     <div class="project-title-section">
                         <h1 id="project-title">Project Title</h1>
-                        <span id="project-status" class="status-badge status-progress">In Progress</span>
+                        <span id="project-status-badge" class="status-badge status-progress">In Progress</span>
                     </div>
                     
                     <div class="project-actions">
@@ -278,7 +278,7 @@
                         </div>
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group" id="status-container">
                         <label for="project-status">Status</label>
                         <select id="project-status">
                             <option value="not started">Not Started</option>
@@ -304,7 +304,6 @@
             </div>
         </div>
     </div>
-    
     <script src="js/obsidian.js"></script>
     <script src="js/project-details.js"></script>
     <script>

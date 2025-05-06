@@ -1,189 +1,237 @@
-// ==============================================
-// PROJECTS CONTROLLER
-// ==============================================
+/**
+ * PROJECTS CONTROLLER
+ * 
+ * This file manages the projects listing page functionality including:
+ * - Loading and displaying projects
+ * - Filtering and sorting projects
+ * - Creating, editing, and deleting projects
+ */
 
-// DOM Elements
+// --------------------------------------------------------------------------
+// DOM ELEMENT REFERENCES
+// --------------------------------------------------------------------------
 const projectsList = document.getElementById('projects-list');
 const noProjectsMessage = document.getElementById('no-projects');
 const newProjectBtn = document.getElementById('new-project-btn');
 const newProjectHeaderBtn = document.getElementById('new-project-header-btn');
 const createFirstProjectBtn = document.getElementById('create-first-project');
 const projectModal = document.getElementById('project-modal');
-const modalTitle = document.getElementById('modal-title');
-const projectForm = document.getElementById('project-form');
-const projectName = document.getElementById('project-name');
-const projectDescription = document.getElementById('project-description');
-const projectStartDate = document.getElementById('project-start-date');
-const projectDeadline = document.getElementById('project-deadline');
-const projectStatus = document.getElementById('project-status');
-const teamSelection = document.getElementById('team-selection');
-const saveProjectBtn = document.getElementById('save-project');
+const closeModalBtn = document.getElementById('close-modal');
 const cancelProjectBtn = document.getElementById('cancel-project');
-const closeModalBtn = document.querySelector('.close-modal');
+const projectForm = document.getElementById('project-form');
+const modalTitle = document.getElementById('modal-title');
 const searchInput = document.getElementById('search-projects');
 const statusFilter = document.getElementById('status-filter');
 const sortProjects = document.getElementById('sort-projects');
-const toggleSidebarBtn = document.getElementById('toggle-sidebar');
-const recentProjectsNavElement = document.getElementById('recent-projects-nav');
-const userInfoElement = document.getElementById('user-info');
 
-// Application State
-let currentUser = null;
-let projects = [];
-let teamMembers = [];
-let editingProjectId = null;
-let currentView = 'card';
+// --------------------------------------------------------------------------
+// APPLICATION STATE
+// --------------------------------------------------------------------------
+let projectsUser = null;     // Current logged-in user
+let allProjects = [];        // All projects from storage
+let editingProjectId = null; // ID of project being edited (null if creating new)
+let teamMembers = [];        // Team members for selection
 
-// ==============================================
+// --------------------------------------------------------------------------
 // INITIALIZATION
-// ==============================================
+// --------------------------------------------------------------------------
 document.addEventListener('DOMContentLoaded', function() {
-    // Check authentication
+    console.log('Projects page initialized');
+    
+    // Redirect to login if not authenticated
     if (!isLoggedIn()) {
         window.location.href = 'login.html';
         return;
     }
     
     // Get current user
-    currentUser = getCurrentUser();
-    
-    // Initialize sidebar toggle
-    initSidebar();
-    
-    // Load projects
-    loadProjects();
-    
-    // Load team members
-    loadTeamMembers();
+    projectsUser = getCurrentUser();
+    console.log('Current user:', projectsUser);
     
     // Set up event listeners
     setupEventListeners();
     
-    // Update UI with user info
-    updateUserUI();
+    // Load data
+    loadProjects();
+    loadTeamMembers();
     
-    // Update recent projects in sidebar
-    updateRecentProjectsNav();
+    // Update user info
+    updateUserInfo();
+    
+    // Check URL for query parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('new') === 'true') {
+        // Open project modal if query parameter specified
+        openProjectModal();
+    }
 });
 
-// ==============================================
+// --------------------------------------------------------------------------
 // EVENT LISTENERS
-// ==============================================
+// --------------------------------------------------------------------------
 function setupEventListeners() {
-    // New project buttons
+    console.log('Setting up event listeners');
+    
+    // Toggle sidebar
+    const toggleSidebarBtn = document.getElementById('toggle-sidebar');
+    if (toggleSidebarBtn) {
+        toggleSidebarBtn.addEventListener('click', function() {
+            const sidebar = document.querySelector('.sidebar');
+            if (sidebar) sidebar.classList.toggle('open');
+        });
+    }
+    
+    // Project creation buttons
     if (newProjectBtn) {
-        newProjectBtn.addEventListener('click', () => openProjectModal());
+        newProjectBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            openProjectModal();
+        });
     }
     
     if (newProjectHeaderBtn) {
-        newProjectHeaderBtn.addEventListener('click', () => openProjectModal());
+        newProjectHeaderBtn.addEventListener('click', function() {
+            openProjectModal();
+        });
     }
     
-    // Create first project button
     if (createFirstProjectBtn) {
-        createFirstProjectBtn.addEventListener('click', () => openProjectModal());
+        createFirstProjectBtn.addEventListener('click', function() {
+            openProjectModal();
+        });
     }
     
-    // Close modal
+    // Project modal controls
     if (closeModalBtn) {
         closeModalBtn.addEventListener('click', closeProjectModal);
     }
     
     if (cancelProjectBtn) {
-        cancelProjectBtn.addEventListener('click', closeProjectModal);
+        cancelProjectBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            closeProjectModal();
+        });
     }
     
-    // Save project
     if (projectForm) {
-        projectForm.addEventListener('submit', handleSaveProject);
+        projectForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveProject();
+        });
     }
     
-    // Search projects
+    // Filter and search controls
     if (searchInput) {
-        searchInput.addEventListener('input', filterProjects);
+        searchInput.addEventListener('input', filterAndDisplayProjects);
     }
     
-    // Filter by status
     if (statusFilter) {
-        statusFilter.addEventListener('change', filterProjects);
+        statusFilter.addEventListener('change', filterAndDisplayProjects);
     }
     
-    // Sort projects
     if (sortProjects) {
-        sortProjects.addEventListener('change', filterProjects);
+        sortProjects.addEventListener('change', filterAndDisplayProjects);
     }
     
     // Close modal when clicking outside
     window.addEventListener('click', function(e) {
-        if (projectModal && e.target === projectModal) {
+        if (e.target === projectModal) {
             closeProjectModal();
         }
     });
-    
-    // Handle sidebar navigation
-    setupSidebarNavigation();
 }
 
-function setupSidebarNavigation() {
-    // Make sure sidebar links work properly
-    const dashboardLink = document.querySelector('a[href="dashboard.html"]');
-    if (dashboardLink) {
-        dashboardLink.addEventListener('click', function() {
-            window.location.href = 'dashboard.html';
-        });
-    }
-    
-    const projectsLink = document.querySelector('a[href="projects.html"]');
-    if (projectsLink) {
-        projectsLink.addEventListener('click', function() {
-            window.location.href = 'projects.html';
-        });
-    }
-    
-    const calendarLink = document.querySelector('a[href="calendar.html"]');
-    if (calendarLink) {
-        calendarLink.addEventListener('click', function() {
-            window.location.href = 'calendar.html';
-        });
-    }
-    
-    const teamLink = document.querySelector('a[href="team.html"]');
-    if (teamLink) {
-        teamLink.addEventListener('click', function() {
-            window.location.href = 'team.html';
-        });
-    }
-}
-
-// ==============================================
-// PROJECTS MANAGEMENT
-// ==============================================
+// --------------------------------------------------------------------------
+// PROJECT MANAGEMENT
+// --------------------------------------------------------------------------
 function loadProjects() {
-    // Get projects from local storage
-    const projectsKey = `orangeAcademyProjects_${currentUser.userId}`;
-    projects = JSON.parse(localStorage.getItem(projectsKey)) || [];
+    console.log('Loading projects');
+    
+    // Get projects from localStorage
+    const projectsKey = `orangeAcademyProjects_${projectsUser.userId}`;
+    allProjects = JSON.parse(localStorage.getItem(projectsKey)) || [];
+    
+    console.log(`Loaded ${allProjects.length} projects`);
     
     // Display projects
-    renderProjects();
-}
-
-function saveProjects() {
-    // Save projects to local storage
-    const projectsKey = `orangeAcademyProjects_${currentUser.userId}`;
-    localStorage.setItem(projectsKey, JSON.stringify(projects));
+    filterAndDisplayProjects();
     
-    // Update recent projects in sidebar
+    // Update sidebar navigation
     updateRecentProjectsNav();
 }
 
-function renderProjects() {
+function filterAndDisplayProjects() {
+    console.log('Filtering and displaying projects');
+    
+    // Make a copy of all projects
+    let filteredProjects = [...allProjects];
+    
+    // Apply search filter if search term exists
+    if (searchInput && searchInput.value.trim() !== '') {
+        const searchTerm = searchInput.value.trim().toLowerCase();
+        console.log('Filtering by search term:', searchTerm);
+        
+        filteredProjects = filteredProjects.filter(project => 
+            project.name.toLowerCase().includes(searchTerm) || 
+            (project.description && project.description.toLowerCase().includes(searchTerm))
+        );
+    }
+    
+    // Apply status filter if not set to "all"
+    if (statusFilter && statusFilter.value !== 'all') {
+        const filterStatus = statusFilter.value;
+        console.log('Filtering by status:', filterStatus);
+        
+        filteredProjects = filteredProjects.filter(project => 
+            project.status === filterStatus
+        );
+    }
+    
+    // Apply sorting
+    if (sortProjects) {
+        const sortBy = sortProjects.value;
+        console.log('Sorting by:', sortBy);
+        
+        switch (sortBy) {
+            case 'newest':
+                filteredProjects.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                break;
+            case 'oldest':
+                filteredProjects.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+                break;
+            case 'name-asc':
+                filteredProjects.sort((a, b) => a.name.localeCompare(b.name));
+                break;
+            case 'name-desc':
+                filteredProjects.sort((a, b) => b.name.localeCompare(a.name));
+                break;
+            case 'deadline':
+                filteredProjects.sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
+                break;
+            default:
+                // Default to newest first
+                filteredProjects.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        }
+    }
+    
+    console.log(`Found ${filteredProjects.length} projects after filtering`);
+    
+    // Display the filtered and sorted projects
+    renderProjects(filteredProjects);
+}
+
+function renderProjects(projectsList) {
     if (!projectsList) return;
     
-    // Clear projects list
-    projectsList.innerHTML = '';
+    const projectsContainer = document.getElementById('projects-list');
+    if (!projectsContainer) return;
     
-    // Show or hide "no projects" message
-    if (projects.length === 0) {
+    // Clear existing content
+    projectsContainer.innerHTML = '';
+    
+    // Show no projects message if empty
+    if (allProjects.length === 0) {
         if (noProjectsMessage) {
             noProjectsMessage.style.display = 'flex';
         }
@@ -194,106 +242,90 @@ function renderProjects() {
         }
     }
     
-    // Filter and sort projects based on current selection
-    let filteredProjects = [...projects];
-    
-    // Apply search filter
-    if (searchInput && searchInput.value.trim()) {
-        const searchTerm = searchInput.value.toLowerCase().trim();
-        filteredProjects = filteredProjects.filter(project => 
-            project.name.toLowerCase().includes(searchTerm) || 
-            (project.description && project.description.toLowerCase().includes(searchTerm))
-        );
-    }
-    
-    // Apply status filter
-    if (statusFilter && statusFilter.value !== 'all') {
-        filteredProjects = filteredProjects.filter(project => 
-            project.status === statusFilter.value
-        );
-    }
-    
-    // Apply sorting
-    if (sortProjects) {
-        const sortBy = sortProjects.value;
-        
-        filteredProjects.sort((a, b) => {
-            switch(sortBy) {
-                case 'name-asc':
-                    return a.name.localeCompare(b.name);
-                case 'name-desc':
-                    return b.name.localeCompare(a.name);
-                case 'deadline':
-                    return new Date(a.deadline) - new Date(b.deadline);
-                case 'oldest':
-                    return new Date(a.createdAt) - new Date(b.createdAt);
-                case 'newest':
-                default:
-                    return new Date(b.createdAt) - new Date(a.createdAt);
-            }
-        });
-    }
-    
-    // Show no projects message if filtered list is empty
-    if (filteredProjects.length === 0) {
+    // Show no results message if filtered to empty
+    if (projectsList.length === 0) {
         const noResults = document.createElement('div');
         noResults.className = 'empty-state';
         noResults.innerHTML = `
-            <i class="fas fa-search"></i>
+            <i class="fas fa-filter"></i>
             <h3>No matching projects</h3>
             <p>Try adjusting your search or filters</p>
         `;
-        projectsList.appendChild(noResults);
+        projectsContainer.appendChild(noResults);
         return;
     }
     
-    // Render each project
-    filteredProjects.forEach(project => {
+    console.log(`Rendering ${projectsList.length} projects`);
+    
+    // Create project cards for each project
+    projectsList.forEach(project => {
         const projectCard = createProjectCard(project);
-        projectsList.appendChild(projectCard);
+        projectsContainer.appendChild(projectCard);
     });
 }
 
 function createProjectCard(project) {
-    // Create project card element
+    // Create card element
     const card = document.createElement('div');
-    card.className = `project-card status-${getStatusClass(project.status)}`;
+    card.className = 'project-card';
     card.dataset.id = project.id;
     
-    // Calculate progress if project has tasks
+    // Calculate progress
     let progressPercentage = 0;
     let completedTasks = 0;
-    let totalTasks = 0;
+    let totalTasks = project.tasks ? project.tasks.length : 0;
     
     if (project.tasks && project.tasks.length > 0) {
-        totalTasks = project.tasks.length;
         completedTasks = project.tasks.filter(task => task.completed).length;
         progressPercentage = Math.round((completedTasks / totalTasks) * 100);
     }
     
-    // Calculate time remaining
-    const timeRemaining = getTimeRemaining(project.deadline);
-    
-    // Format dates
+    // Calculate dates and time remaining
     const startDate = formatDate(new Date(project.startDate));
-    const deadline = formatDate(new Date(project.deadline));
+    const deadlineDate = formatDate(new Date(project.deadline));
+    const timeRemaining = getTimeRemaining(project.deadline);
+    const timeRemainingText = timeRemaining.overdue ? 
+        `Overdue by ${Math.abs(timeRemaining.days)} days` : 
+        `${timeRemaining.days} days left`;
     
-    // Get team member information
-    const teamMembers = project.team && project.team.length > 0 ? 
-        project.team.map(memberId => {
-            const member = getTeamMember(memberId);
-            return member ? member.name : 'Unknown';
-        }).join(', ') : 
-        'No team assigned';
+    // Status class for styling
+    const statusClass = getStatusClass(project.status);
     
-    // Build HTML
+    // Set background color for progress bar
+    let progressColor = 'var(--status-progress)';
+    if (progressPercentage === 100) {
+        progressColor = 'var(--status-completed)';
+    } else if (progressPercentage >= 75) {
+        progressColor = 'var(--accent-blue)';
+    } else if (progressPercentage >= 50) {
+        progressColor = 'var(--accent-orange)';
+    }
+    
+    // Build card HTML
     card.innerHTML = `
         <div class="project-header">
             <h3 class="project-title">${project.name}</h3>
-            <span class="project-status">${project.status}</span>
+            <span class="status-badge status-${statusClass}">
+                ${project.status ? capitalizeFirstLetter(project.status) : 'Not Started'}
+            </span>
         </div>
         <div class="project-body">
             <p class="project-description">${project.description || 'No description provided'}</p>
+            
+            <div class="project-details">
+                <div class="detail-group">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>${startDate} - ${deadlineDate}</span>
+                </div>
+                <div class="detail-group ${timeRemaining.overdue ? 'overdue' : timeRemaining.urgent ? 'urgent' : ''}">
+                    <i class="fas fa-clock"></i>
+                    <span>${timeRemainingText}</span>
+                </div>
+                <div class="detail-group">
+                    <i class="fas fa-tasks"></i>
+                    <span>${completedTasks}/${totalTasks} tasks completed</span>
+                </div>
+            </div>
             
             <div class="project-progress">
                 <div class="progress-label">
@@ -301,194 +333,178 @@ function createProjectCard(project) {
                     <span>${progressPercentage}%</span>
                 </div>
                 <div class="progress-bar">
-                    <div class="progress-fill" style="width: ${progressPercentage}%"></div>
-                </div>
-                <div class="task-count">${completedTasks}/${totalTasks} tasks completed</div>
-            </div>
-            
-            <div class="project-details">
-                <div class="detail-group">
-                    <span class="detail-label"><i class="fas fa-calendar-alt"></i> Start:</span>
-                    <span class="detail-value">${startDate}</span>
-                </div>
-                <div class="detail-group">
-                    <span class="detail-label"><i class="fas fa-clock"></i> Deadline:</span>
-                    <span class="detail-value ${timeRemaining.overdue ? 'overdue' : timeRemaining.urgent ? 'urgent' : ''}">${deadline}</span>
-                </div>
-                <div class="detail-group">
-                    <span class="detail-label"><i class="fas fa-users"></i> Team:</span>
-                    <span class="detail-value team-members" title="${teamMembers}">${teamMembers}</span>
+                    <div class="progress-fill" style="width: ${progressPercentage}%; background-color: ${progressColor};"></div>
                 </div>
             </div>
         </div>
         <div class="project-footer">
-            <button class="btn-view-project" data-id="${project.id}">
-                <i class="fas fa-eye"></i> View
-            </button>
-            <button class="btn-edit-project" data-id="${project.id}">
-                <i class="fas fa-edit"></i> Edit
-            </button>
-            <button class="btn-delete-project" data-id="${project.id}">
-                <i class="fas fa-trash"></i> Delete
-            </button>
+            <div class="project-actions">
+                <button class="btn-edit-project" title="Edit Project">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn-delete-project" title="Delete Project">
+                    <i class="fas fa-trash"></i>
+                </button>
+                <button class="btn-view-project" title="View Project">
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
         </div>
     `;
     
-    // Add event listeners
-    const viewBtn = card.querySelector('.btn-view-project');
+    // Make the whole card clickable to navigate to project details
+    card.addEventListener('click', function(e) {
+        // Don't navigate if clicking on buttons
+        if (e.target.closest('.project-actions button')) return;
+        
+        window.location.href = `project-details.html?id=${project.id}`;
+    });
+    
+    // Add button event listeners
     const editBtn = card.querySelector('.btn-edit-project');
-    const deleteBtn = card.querySelector('.btn-delete-project');
-    
-    if (viewBtn) {
-        viewBtn.addEventListener('click', () => viewProject(project.id));
-    }
-    
     if (editBtn) {
-        editBtn.addEventListener('click', () => editProject(project.id));
+        editBtn.addEventListener('click', function(e) {
+            e.stopPropagation(); // Don't trigger card click
+            openProjectModal(project.id);
+        });
     }
     
+    const deleteBtn = card.querySelector('.btn-delete-project');
     if (deleteBtn) {
-        deleteBtn.addEventListener('click', () => deleteProject(project.id));
+        deleteBtn.addEventListener('click', function(e) {
+            e.stopPropagation(); // Don't trigger card click
+            deleteProject(project.id);
+        });
+    }
+    
+    const viewBtn = card.querySelector('.btn-view-project');
+    if (viewBtn) {
+        viewBtn.addEventListener('click', function(e) {
+            e.stopPropagation(); // Don't trigger card click
+            window.location.href = `project-details.html?id=${project.id}`;
+        });
     }
     
     return card;
 }
 
-function getStatusClass(status) {
-    if (!status) return 'not-started';
-    
-    switch(status.toLowerCase()) {
-        case 'not started':
-            return 'not-started';
-        case 'in progress':
-            return 'progress';
-        case 'on hold':
-            return 'hold';
-        case 'completed':
-            return 'completed';
-        case 'cancelled':
-            return 'cancelled';
-        default:
-            return 'not-started';
-    }
-}
-
-function getTimeRemaining(deadline) {
-    const now = new Date();
-    const deadlineDate = new Date(deadline);
-    const timeRemaining = deadlineDate - now;
-    const daysRemaining = Math.ceil(timeRemaining / (1000 * 60 * 60 * 24));
-    
-    return {
-        days: daysRemaining,
-        urgent: daysRemaining <= 3 && daysRemaining > 0,
-        overdue: daysRemaining < 0
-    };
-}
-
-function formatDate(date) {
-    return date.toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'short', 
-        day: 'numeric' 
-    });
-}
-
 function openProjectModal(projectId = null) {
-    if (!projectModal) return;
+    console.log('Opening project modal', projectId ? 'for editing' : 'for creation');
     
-    // Reset form fields
-    resetFormFields();
+    // Get form elements
+    const projectNameInput = document.getElementById('project-name');
+    const projectDescInput = document.getElementById('project-description');
+    const projectStartDateInput = document.getElementById('project-start-date');
+    const projectDeadlineInput = document.getElementById('project-deadline');
+    const projectStatusInput = document.getElementById('project-status');
+    const saveProjectBtn = document.getElementById('save-project');
     
-    // Set modal title based on operation
+    // Reset form
+    if (projectForm) projectForm.reset();
+    
     if (projectId) {
-        modalTitle.textContent = 'Edit Project';
+        // Edit existing project
         editingProjectId = projectId;
+        modalTitle.textContent = 'Edit Project';
+        if (saveProjectBtn) saveProjectBtn.textContent = 'Update Project';
         
-        // Populate form with project data
-        const project = projects.find(p => p.id === projectId);
+        // Find project
+        const project = allProjects.find(p => p.id === projectId);
         if (project) {
-            projectName.value = project.name;
-            projectDescription.value = project.description || '';
-            projectStartDate.value = project.startDate;
-            projectDeadline.value = project.deadline;
-            projectStatus.value = project.status;
+            // Fill form with project data
+            if (projectNameInput) projectNameInput.value = project.name || '';
+            if (projectDescInput) projectDescInput.value = project.description || '';
+            if (projectStartDateInput) projectStartDateInput.value = project.startDate || '';
+            if (projectDeadlineInput) projectDeadlineInput.value = project.deadline || '';
+            if (projectStatusInput) projectStatusInput.value = project.status || 'not started';
             
-            // Select team members
-            if (project.team && teamSelection) {
-                const checkboxes = teamSelection.querySelectorAll('input[type="checkbox"]');
-                checkboxes.forEach(checkbox => {
-                    checkbox.checked = project.team.includes(checkbox.value);
-                });
-            }
+            // Select team members if applicable
+            populateTeamSelection(project.team);
         }
     } else {
-        modalTitle.textContent = 'Create New Project';
+        // Create new project
         editingProjectId = null;
+        modalTitle.textContent = 'New Project';
+        if (saveProjectBtn) saveProjectBtn.textContent = 'Create Project';
         
         // Set default dates
         const today = new Date().toISOString().split('T')[0];
-        if (projectStartDate) projectStartDate.value = today;
+        if (projectStartDateInput) projectStartDateInput.value = today;
         
-        // Set default deadline (7 days from now)
-        const defaultDeadline = new Date();
-        defaultDeadline.setDate(defaultDeadline.getDate() + 7);
-        if (projectDeadline) projectDeadline.value = defaultDeadline.toISOString().split('T')[0];
+        const nextWeek = new Date();
+        nextWeek.setDate(nextWeek.getDate() + 7);
+        if (projectDeadlineInput) projectDeadlineInput.value = nextWeek.toISOString().split('T')[0];
+        
+        populateTeamSelection();
     }
     
     // Show modal
-    projectModal.style.display = 'block';
+    if (projectModal) projectModal.style.display = 'block';
+    
+    // Reset event listeners to prevent duplicates for the cancel button
+    if (cancelProjectBtn) {
+        const newCancelBtn = cancelProjectBtn.cloneNode(true);
+        cancelProjectBtn.parentNode.replaceChild(newCancelBtn, cancelProjectBtn);
+        
+        newCancelBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            closeProjectModal();
+        });
+    }
 }
 
 function closeProjectModal() {
-    if (projectModal) {
-        projectModal.style.display = 'none';
-    }
-    resetFormFields();
+    console.log('Closing project modal');
+    if (projectModal) projectModal.style.display = 'none';
     editingProjectId = null;
 }
 
-function resetFormFields() {
-    if (projectForm) projectForm.reset();
-}
-
-function handleSaveProject(e) {
-    e.preventDefault();
+function saveProject() {
+    console.log('Saving project', editingProjectId ? 'editing existing' : 'creating new');
+    
+    // Get form values
+    const projectName = document.getElementById('project-name').value.trim();
+    const projectDesc = document.getElementById('project-description').value.trim();
+    const projectStartDate = document.getElementById('project-start-date').value;
+    const projectDeadline = document.getElementById('project-deadline').value;
+    const projectStatus = document.getElementById('project-status').value;
     
     // Validate form
-    if (!projectName.value.trim()) {
-        alert('Please enter a project name');
+    if (!projectName) {
+        alert('Project name is required');
         return;
     }
     
-    if (!projectStartDate.value) {
-        alert('Please select a start date');
+    if (!projectStartDate) {
+        alert('Start date is required');
         return;
     }
     
-    if (!projectDeadline.value) {
-        alert('Please select a deadline');
+    if (!projectDeadline) {
+        alert('Deadline is required');
         return;
     }
     
     // Get selected team members
-    let selectedTeam = [];
-    if (teamSelection) {
-        const checkboxes = teamSelection.querySelectorAll('input[type="checkbox"]:checked');
-        selectedTeam = Array.from(checkboxes).map(cb => cb.value);
-    }
+    const selectedTeam = [];
+    const teamCheckboxes = document.querySelectorAll('#team-selection input[type="checkbox"]:checked');
+    teamCheckboxes.forEach(checkbox => {
+        selectedTeam.push(checkbox.value);
+    });
     
     if (editingProjectId) {
         // Update existing project
-        const projectIndex = projects.findIndex(p => p.id === editingProjectId);
+        const projectIndex = allProjects.findIndex(p => p.id === editingProjectId);
         if (projectIndex !== -1) {
-            projects[projectIndex] = {
-                ...projects[projectIndex],
-                name: projectName.value.trim(),
-                description: projectDescription.value.trim(),
-                startDate: projectStartDate.value,
-                deadline: projectDeadline.value,
-                status: projectStatus.value,
+            // Keep existing tasks and other properties
+            allProjects[projectIndex] = {
+                ...allProjects[projectIndex],
+                name: projectName,
+                description: projectDesc,
+                startDate: projectStartDate,
+                deadline: projectDeadline,
+                status: projectStatus,
                 team: selectedTeam,
                 updatedAt: new Date().toISOString()
             };
@@ -497,156 +513,173 @@ function handleSaveProject(e) {
         // Create new project
         const newProject = {
             id: Date.now().toString(),
-            name: projectName.value.trim(),
-            description: projectDescription.value.trim(),
-            startDate: projectStartDate.value,
-            deadline: projectDeadline.value,
-            status: projectStatus.value,
+            name: projectName,
+            description: projectDesc,
+            startDate: projectStartDate,
+            deadline: projectDeadline,
+            status: projectStatus,
             team: selectedTeam,
             tasks: [],
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
         };
         
-        projects.push(newProject);
+        allProjects.push(newProject);
     }
     
-    // Save and render projects
+    // Save to localStorage
     saveProjects();
-    renderProjects();
     
-    // Close modal
+    // Close modal and refresh projects list
     closeProjectModal();
-}
-
-function viewProject(projectId) {
-    // Redirect to project details page
-    window.location.href = `project-details.html?id=${projectId}`;
-}
-
-function editProject(projectId) {
-    openProjectModal(projectId);
+    filterAndDisplayProjects();
 }
 
 function deleteProject(projectId) {
-    if (confirm('Are you sure you want to delete this project?')) {
-        projects = projects.filter(project => project.id !== projectId);
+    if (confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
+        console.log('Deleting project:', projectId);
+        
+        // Remove project from array
+        allProjects = allProjects.filter(project => project.id !== projectId);
+        
+        // Save to localStorage
         saveProjects();
-        renderProjects();
+        
+        // Refresh projects list
+        filterAndDisplayProjects();
     }
 }
 
-function filterProjects() {
-    renderProjects();
+function saveProjects() {
+    // Save projects to localStorage
+    const projectsKey = `orangeAcademyProjects_${projectsUser.userId}`;
+    localStorage.setItem(projectsKey, JSON.stringify(allProjects));
+    
+    console.log(`Saved ${allProjects.length} projects to localStorage`);
+    
+    // Update sidebar navigation
+    updateRecentProjectsNav();
 }
 
-// ==============================================
+// --------------------------------------------------------------------------
 // TEAM MANAGEMENT
-// ==============================================
+// --------------------------------------------------------------------------
 function loadTeamMembers() {
-    // Get team members from local storage
-    const teamKey = `orangeAcademyTeam_${currentUser.userId}`;
+    // Get team members from localStorage
+    const teamKey = `orangeAcademyTeam_${projectsUser.userId}`;
     teamMembers = JSON.parse(localStorage.getItem(teamKey)) || [];
     
-    // If no team members exist, create some demo team members
+    // Create demo team members if none exist
     if (teamMembers.length === 0) {
         createDemoTeamMembers();
     }
     
-    // Populate team selection in project form
-    populateTeamSelection();
+    console.log(`Loaded ${teamMembers.length} team members`);
 }
 
 function createDemoTeamMembers() {
-    const demoMembers = [
-        { id: '1001', name: 'John Smith', role: 'Developer' },
-        { id: '1002', name: 'Emily Johnson', role: 'Designer' },
-        { id: '1003', name: 'Michael Brown', role: 'Project Manager' },
-        { id: '1004', name: 'Sarah Davis', role: 'QA Engineer' }
+    console.log('Creating demo team members');
+    
+    // Create some default team members for demo purposes
+    const demoTeam = [
+        { id: 'tm1', name: 'John Smith', role: 'Developer' },
+        { id: 'tm2', name: 'Emily Johnson', role: 'Designer' },
+        { id: 'tm3', name: 'Michael Brown', role: 'Project Manager' },
+        { id: 'tm4', name: 'Sarah Lee', role: 'QA Engineer' }
     ];
     
-    teamMembers = demoMembers;
-    const teamKey = `orangeAcademyTeam_${currentUser.userId}`;
+    teamMembers = demoTeam;
+    
+    // Save to localStorage
+    const teamKey = `orangeAcademyTeam_${projectsUser.userId}`;
     localStorage.setItem(teamKey, JSON.stringify(teamMembers));
 }
 
-function populateTeamSelection() {
-    if (!teamSelection) return;
+function populateTeamSelection(selectedIds = []) {
+    const teamSelectionContainer = document.getElementById('team-selection');
+    if (!teamSelectionContainer) return;
     
-    // Clear existing options
-    teamSelection.innerHTML = '';
+    // Clear existing content
+    teamSelectionContainer.innerHTML = '';
     
     if (teamMembers.length === 0) {
-        // Show message if no team members
-        teamSelection.innerHTML = '<p>No team members available. Add team members first.</p>';
+        teamSelectionContainer.innerHTML = '<p>No team members available</p>';
         return;
     }
     
     // Create checkbox for each team member
     teamMembers.forEach(member => {
-        const memberDiv = document.createElement('div');
-        memberDiv.className = 'team-member-option';
+        const memberOption = document.createElement('div');
+        memberOption.className = 'team-member-option';
         
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.id = `team-member-${member.id}`;
-        checkbox.value = member.id;
-        checkbox.name = 'team-members';
+        const isSelected = selectedIds && selectedIds.includes(member.id);
         
-        const label = document.createElement('label');
-        label.htmlFor = `team-member-${member.id}`;
-        label.textContent = member.name;
+        memberOption.innerHTML = `
+            <input type="checkbox" id="team-member-${member.id}" value="${member.id}" ${isSelected ? 'checked' : ''}>
+            <label for="team-member-${member.id}">${member.name} (${member.role})</label>
+        `;
         
-        memberDiv.appendChild(checkbox);
-        memberDiv.appendChild(label);
-        teamSelection.appendChild(memberDiv);
+        teamSelectionContainer.appendChild(memberOption);
     });
 }
 
-function getTeamMember(id) {
-    return teamMembers.find(member => member.id === id);
-}
-
-// ==============================================
-// SIDEBAR & UI FUNCTIONS 
-// ==============================================
-function initSidebar() {
-    if (toggleSidebarBtn) {
-        toggleSidebarBtn.addEventListener('click', function() {
-            const sidebar = document.querySelector('.sidebar');
-            if (sidebar) {
-                sidebar.classList.toggle('open');
-            }
-        });
-    }
+// --------------------------------------------------------------------------
+// UI UTILITIES
+// --------------------------------------------------------------------------
+function updateUserInfo() {
+    const userInfoElement = document.getElementById('user-info');
+    if (!userInfoElement || !projectsUser) return;
+    
+    // Create user avatar initials
+    const nameParts = projectsUser.fullname.split(' ');
+    const initials = nameParts.length > 1 
+        ? (nameParts[0][0] + nameParts[1][0]).toUpperCase() 
+        : nameParts[0].substring(0, 2).toUpperCase();
+    
+    // Update user info display
+    userInfoElement.innerHTML = `
+        <div class="user-avatar">${initials}</div>
+        <div class="user-details">
+            <div class="user-name">${projectsUser.fullname}</div>
+            <div class="user-email">${projectsUser.email}</div>
+        </div>
+        <div class="user-dropdown">
+            <i class="fas fa-chevron-down"></i>
+        </div>
+    `;
+    
+    // Setup user dropdown menu
+    setupUserDropdown(userInfoElement);
 }
 
 function updateRecentProjectsNav() {
+    const recentProjectsNavElement = document.getElementById('recent-projects-nav');
     if (!recentProjectsNavElement) return;
     
     // Clear previous content
     recentProjectsNavElement.innerHTML = '';
     
-    if (projects.length === 0) {
+    if (allProjects.length === 0) {
         recentProjectsNavElement.innerHTML = '<div class="nav-placeholder-message">No projects yet</div>';
         return;
     }
     
-    // Sort projects by updated date (most recent first)
-    const recentProjects = [...projects]
+    // Show most recently updated projects
+    const recentProjects = [...allProjects]
         .sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt))
         .slice(0, 5); // Show only top 5
     
-    // Create nav items
-    recentProjects.forEach(p => {
+    // Create navigation links for each project
+    recentProjects.forEach(project => {
         const projectLink = document.createElement('a');
-        projectLink.href = `project-details.html?id=${p.id}`;
+        projectLink.href = `project-details.html?id=${project.id}`;
         projectLink.className = 'nav-item';
         
-        // Status icon
+        // Create status icon based on project status
         const statusIcon = document.createElement('i');
+        const status = (project.status || 'not started').toLowerCase();
         
-        switch(p.status.toLowerCase()) {
+        switch(status) {
             case 'not started':
                 statusIcon.className = 'fas fa-circle-dot';
                 break;
@@ -667,11 +700,12 @@ function updateRecentProjectsNav() {
         }
         
         // Set icon color based on status
-        statusIcon.style.color = `var(--status-${getStatusClass(p.status)})`;
+        statusIcon.style.color = `var(--status-${getStatusClass(project.status || 'not started')})`;
         
         // Project name
-        const projectName = document.createTextNode(p.name);
+        const projectName = document.createTextNode(project.name || 'Unnamed Project');
         
+        // Assemble the link
         projectLink.appendChild(statusIcon);
         projectLink.appendChild(projectName);
         
@@ -679,39 +713,11 @@ function updateRecentProjectsNav() {
     });
 }
 
-function updateUserUI() {
-    if (!userInfoElement || !currentUser) return;
-    
-    // Create initials from user's name
-    const nameParts = currentUser.fullname.split(' ');
-    const initials = nameParts.length > 1 
-        ? (nameParts[0][0] + nameParts[1][0]).toUpperCase() 
-        : nameParts[0].substring(0, 2).toUpperCase();
-    
-    // Update user info in sidebar
-    userInfoElement.innerHTML = `
-        <div class="user-avatar">${initials}</div>
-        <div class="user-details">
-            <div class="user-name">${currentUser.fullname}</div>
-            <div class="user-email">${currentUser.email}</div>
-        </div>
-        <div class="user-dropdown">
-            <i class="fas fa-chevron-down"></i>
-        </div>
-    `;
-    
-    // Add dropdown menu and functionality
-    setupUserDropdown(userInfoElement);
-}
-
 function setupUserDropdown(userInfoElement) {
     // Remove any existing dropdown menu
     const existingMenu = document.getElementById('user-dropdown-menu');
-    if (existingMenu) {
-        existingMenu.remove();
-    }
+    if (existingMenu) existingMenu.remove();
     
-    // Find the user profile container
     const userProfile = document.querySelector('.user-profile');
     if (!userProfile) return;
     
@@ -721,6 +727,7 @@ function setupUserDropdown(userInfoElement) {
     userMenu.className = 'user-menu';
     userMenu.style.display = 'none';
     
+    // Menu items
     userMenu.innerHTML = `
         <a href="#" class="user-menu-item" id="profile-btn">
             <i class="fas fa-user-circle"></i> Profile
@@ -764,22 +771,70 @@ function setupUserDropdown(userInfoElement) {
     });
 }
 
-// ==============================================
-// USER AUTHENTICATION FUNCTIONS
-// ==============================================
+// --------------------------------------------------------------------------
+// HELPER FUNCTIONS
+// --------------------------------------------------------------------------
+function getTimeRemaining(deadline) {
+    const now = new Date();
+    const deadlineDate = new Date(deadline);
+    const timeRemaining = deadlineDate - now;
+    const daysRemaining = Math.ceil(timeRemaining / (1000 * 60 * 60 * 24));
+    
+    return {
+        days: Math.abs(daysRemaining),
+        urgent: daysRemaining <= 3 && daysRemaining > 0,
+        overdue: daysRemaining < 0
+    };
+}
+
+function formatDate(date) {
+    return date.toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
+    });
+}
+
+function getStatusClass(status) {
+    if (!status) return 'not-started';
+    
+    const statusLower = status.toLowerCase();
+    
+    switch(statusLower) {
+        case 'not started':
+            return 'not-started';
+        case 'in progress':
+            return 'progress';
+        case 'on hold':
+            return 'hold';
+        case 'completed':
+            return 'completed';
+        case 'cancelled':
+            return 'cancelled';
+        default:
+            return 'not-started';
+    }
+}
+
+function capitalizeFirstLetter(string) {
+    if (!string) return '';
+    return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
+// --------------------------------------------------------------------------
+// AUTHENTICATION FUNCTIONS
+// --------------------------------------------------------------------------
 function isLoggedIn() {
-    const session = JSON.parse(localStorage.getItem('orangeAcademySession'));
-    return !!(session && session.loggedIn);
+    const session = JSON.parse(localStorage.getItem('orangeAcademySession')) || {};
+    return !!session.loggedIn;
 }
 
 function getCurrentUser() {
-    if (!isLoggedIn()) return null;
-    
-    const session = JSON.parse(localStorage.getItem('orangeAcademySession'));
+    const session = JSON.parse(localStorage.getItem('orangeAcademySession')) || {};
     return {
-        userId: session.userId,
-        fullname: session.fullname,
-        email: session.email
+        userId: session.userId || 'guest',
+        fullname: session.fullname || 'Guest User',
+        email: session.email || 'guest@example.com'
     };
 }
 
@@ -787,6 +842,7 @@ function logout() {
     if (confirm('Are you sure you want to log out?')) {
         localStorage.removeItem('orangeAcademySession');
         
+        // Add fade-out animation before redirecting
         document.body.style.opacity = '0';
         document.body.style.transition = 'opacity 0.5s';
         

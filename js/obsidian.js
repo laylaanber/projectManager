@@ -1,8 +1,9 @@
-// ==============================================
-// OBSIDIAN-STYLE PROJECT MANAGER
-// ==============================================
+/**
+ * OBSIDIAN-STYLE PROJECT MANAGER
+ * Main JavaScript file for dashboard functionality
+ */
 
-// DOM Elements
+// DOM Element references for the UI components
 const sidebar = document.querySelector('.sidebar');
 const toggleSidebarBtn = document.getElementById('toggle-sidebar');
 const navItems = document.querySelectorAll('.nav-item');
@@ -22,66 +23,97 @@ const recentActivityElement = document.getElementById('recent-activity');
 const projectsTimelineElement = document.getElementById('projects-timeline');
 const globalSearchInput = document.getElementById('global-search');
 
-// Application State
+// Application state variables
 let currentUser = null;
 let projects = [];
 let teamMembers = [];
 let editingProjectId = null;
 let currentView = 'card';
 
-// ==============================================
-// INITIALIZATION
-// ==============================================
+/**
+ * INITIALIZATION
+ * Sets up the application when the page loads
+ */
 document.addEventListener('DOMContentLoaded', function() {
-    // Check authentication
+    // Redirect to login if not authenticated
     if (!isLoggedIn()) {
         window.location.href = 'login.html';
         return;
     }
     
-    // Get current user
+    // Initialize application data and UI
     currentUser = getCurrentUser();
-    
-    // Set current date
     updateCurrentDate();
-    
-    // Load data
     loadProjects();
     loadTeamMembers();
-    
-    // Set up event listeners
     setupEventListeners();
-    
-    // Update UI with user info
     updateUserUI();
-    
-    // Initialize dashboard
     updateDashboard();
+
+    // Create a close button for mobile sidebar
+    const closeSidebarBtn = document.createElement('button');
+    closeSidebarBtn.className = 'close-sidebar';
+    closeSidebarBtn.innerHTML = '<i class="fas fa-times"></i>';
+    closeSidebarBtn.setAttribute('aria-label', 'Close Sidebar');
+    
+    // Add to sidebar header
+    const sidebarHeader = document.querySelector('.sidebar-header');
+    if (sidebarHeader) {
+        sidebarHeader.appendChild(closeSidebarBtn);
+        
+        // Event listener for close button
+        closeSidebarBtn.addEventListener('click', () => {
+            sidebar.classList.remove('open');
+        });
+    }
+    
+    // Also close sidebar when clicking on navigation items in mobile view
+    const navLinks = document.querySelectorAll('.nav-item');
+    navLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            // Check if we're in mobile view (sidebar has position: fixed)
+            const isMobile = window.getComputedStyle(sidebar).position === 'fixed';
+            if (isMobile) {
+                sidebar.classList.remove('open');
+            }
+        });
+    });
+    
+    // Close sidebar when clicking outside in mobile view
+    document.addEventListener('click', (e) => {
+        const isMobile = window.getComputedStyle(sidebar).position === 'fixed';
+        if (isMobile && 
+            sidebar.classList.contains('open') && 
+            !sidebar.contains(e.target) && 
+            e.target !== toggleSidebarBtn) {
+            sidebar.classList.remove('open');
+        }
+    });
 });
 
-// ==============================================
-// EVENT LISTENERS
-// ==============================================
+/**
+ * EVENT LISTENERS
+ * Sets up all interactive elements on the page
+ */
 function setupEventListeners() {
-    // Toggle sidebar
+    // Sidebar toggle functionality
     if (toggleSidebarBtn) {
-        toggleSidebarBtn.addEventListener('click', () => {
+        toggleSidebarBtn.addEventListener('click', function() {
             sidebar.classList.toggle('open');
         });
     }
     
-    // Navigation items
+    // Navigation item click handling
     navItems.forEach(item => {
         item.addEventListener('click', function(e) {
-            // Allow regular navigation through href attributes to work normally
+            // Allow regular navigation for links to other pages
             if (this.getAttribute('href') && 
                 (this.getAttribute('href').includes('.html') || 
                  this.getAttribute('href').startsWith('http'))) {
-                // Allow default navigation
                 return;
             }
             
-            // For data-view based navigation (now mainly for view controls)
+            // Handle view changes within the current page
             e.preventDefault();
             const view = this.getAttribute('data-view');
             if (view) {
@@ -90,19 +122,17 @@ function setupEventListeners() {
         });
     });
     
-    // View control buttons
+    // View mode toggle buttons (card, list, timeline)
     viewButtons.forEach(btn => {
         btn.addEventListener('click', function() {
             viewButtons.forEach(b => b.classList.remove('active'));
             this.classList.add('active');
             currentView = this.getAttribute('data-view');
-            
-            // Update view based on selection
             updateViewMode();
         });
     });
     
-    // New project button
+    // Project creation button
     if (newProjectBtn) {
         newProjectBtn.addEventListener('click', function(e) {
             e.preventDefault();
@@ -110,7 +140,7 @@ function setupEventListeners() {
         });
     }
     
-    // Close modal buttons
+    // Modal close buttons
     if (closeModalBtn) {
         closeModalBtn.addEventListener('click', closeProjectModal);
     }
@@ -136,7 +166,6 @@ function setupEventListeners() {
                 filterProjects(searchTerm);
             }
             
-            // Highlight search terms in the dashboard
             highlightSearchTerms(searchTerm);
         });
     }
@@ -148,10 +177,12 @@ function setupEventListeners() {
         }
     });
 }
+/**
+ * DASHBOARD FUNCTIONS
+ * Methods for updating the main dashboard elements
+ */
 
-// ==============================================
-// DASHBOARD FUNCTIONS
-// ==============================================
+// Updates the current date display in the header
 function updateCurrentDate() {
     if (currentDateElement) {
         const now = new Date();
@@ -164,6 +195,7 @@ function updateCurrentDate() {
     }
 }
 
+// Updates all dashboard widgets with current data
 function updateDashboard() {
     updateProjectProgress();
     updateUpcomingDeadlines();
@@ -172,19 +204,19 @@ function updateDashboard() {
     updateRecentProjectsNav();
 }
 
+// Updates the project progress widget with completion percentages
 function updateProjectProgress() {
     if (!projectProgressElement) return;
     
-    // Remove placeholders
     projectProgressElement.innerHTML = '';
     
-    // If no projects, show message
+    // Show message if no projects available
     if (!projects.length) {
         projectProgressElement.innerHTML = '<p class="empty-state">No projects available.</p>';
         return;
     }
     
-    // Sort projects by progress (lowest to highest)
+    // Display projects sorted by progress (lowest to highest)
     const projectsToShow = [...projects]
         .sort((a, b) => calculateProgress(a) - calculateProgress(b))
         .slice(0, 5); // Show only top 5
@@ -192,6 +224,7 @@ function updateProjectProgress() {
     projectsToShow.forEach(project => {
         const progressPercentage = calculateProgress(project);
         
+        // Create progress item elements
         const progressItem = document.createElement('div');
         progressItem.className = 'progress-item';
         
@@ -216,13 +249,14 @@ function updateProjectProgress() {
             progressFill.style.backgroundColor = 'var(--status-completed)';
         }
         
+        // Assemble the progress item
         progressHeader.appendChild(progressTitle);
         progressHeader.appendChild(progressPercentageEl);
         progressBar.appendChild(progressFill);
         progressItem.appendChild(progressHeader);
         progressItem.appendChild(progressBar);
         
-        // Add click handler
+        // Make progress items clickable to navigate to project details
         progressItem.addEventListener('click', () => {
             window.location.href = `project-details.html?id=${project.id}`;
         });
@@ -231,24 +265,23 @@ function updateProjectProgress() {
     });
 }
 
+// Updates the upcoming deadlines widget
 function updateUpcomingDeadlines() {
     if (!upcomingDeadlinesElement) return;
     
-    // Remove placeholders
     upcomingDeadlinesElement.innerHTML = '';
     
-    // Filter projects that are not completed or cancelled
+    // Only show active projects (not completed or cancelled)
     const activeProjects = projects.filter(p => 
         p.status !== 'completed' && p.status !== 'cancelled'
     );
     
-    // If no active projects, show message
     if (!activeProjects.length) {
         upcomingDeadlinesElement.innerHTML = '<p class="empty-state">No upcoming deadlines.</p>';
         return;
     }
     
-    // Sort by deadline (closest first)
+    // Sort projects by deadline (closest first)
     const sortedByDeadline = [...activeProjects]
         .sort((a, b) => new Date(a.deadline) - new Date(b.deadline))
         .slice(0, 5); // Show only top 5
@@ -259,6 +292,7 @@ function updateUpcomingDeadlines() {
         const isOverdue = deadline < today;
         const daysLeft = Math.ceil((deadline - today) / (1000 * 60 * 60 * 24));
         
+        // Create deadline item elements
         const deadlineItem = document.createElement('div');
         deadlineItem.className = 'deadline-item';
         
@@ -272,6 +306,7 @@ function updateUpcomingDeadlines() {
         const deadlineDate = document.createElement('div');
         deadlineDate.className = 'deadline-date';
         
+        // Format the deadline text based on days remaining
         if (isOverdue) {
             deadlineDate.textContent = `Overdue by ${Math.abs(daysLeft)} days`;
             deadlineDate.style.color = 'var(--status-cancelled)';
@@ -286,12 +321,13 @@ function updateUpcomingDeadlines() {
         statusBadge.className = `deadline-status status-${getStatusClass(project.status)}`;
         statusBadge.textContent = project.status;
         
+        // Assemble the deadline item
         deadlineInfo.appendChild(projectName);
         deadlineInfo.appendChild(deadlineDate);
         deadlineItem.appendChild(deadlineInfo);
         deadlineItem.appendChild(statusBadge);
         
-        // Add click handler
+        // Make deadline items clickable to navigate to project details
         deadlineItem.addEventListener('click', () => {
             window.location.href = `project-details.html?id=${project.id}`;
         });
@@ -300,19 +336,18 @@ function updateUpcomingDeadlines() {
     });
 }
 
+// Updates the recent activity widget with latest project changes
 function updateRecentActivity() {
     if (!recentActivityElement) return;
     
-    // Remove placeholders
     recentActivityElement.innerHTML = '';
     
-    // If no projects, show message
     if (!projects.length) {
         recentActivityElement.innerHTML = '<p class="empty-state">No recent activity.</p>';
         return;
     }
     
-    // Sort projects by last updated date
+    // Sort projects by last updated date (most recent first)
     const recentlyUpdated = [...projects]
         .sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt))
         .slice(0, 5); // Show only top 5
@@ -325,6 +360,7 @@ function updateRecentActivity() {
             description: `Status: ${project.status}`
         };
         
+        // Create activity item elements
         const activityItem = document.createElement('div');
         activityItem.className = 'activity-item';
         
@@ -343,12 +379,13 @@ function updateRecentActivity() {
         activityDescription.className = 'activity-description';
         activityDescription.textContent = activity.description;
         
+        // Assemble the activity item
         activityHeader.appendChild(activityTitle);
         activityHeader.appendChild(activityTime);
         activityItem.appendChild(activityHeader);
         activityItem.appendChild(activityDescription);
         
-        // Add click handler
+        // Make activity items clickable to navigate to project details
         activityItem.addEventListener('click', () => {
             window.location.href = `project-details.html?id=${project.id}`;
         });
@@ -357,19 +394,18 @@ function updateRecentActivity() {
     });
 }
 
+// Creates a visual timeline of all projects
 function updateProjectsTimeline() {
     if (!projectsTimelineElement) return;
     
-    // Remove placeholders
     projectsTimelineElement.innerHTML = '';
     
-    // If no projects, show message
     if (!projects.length) {
         projectsTimelineElement.innerHTML = '<div class="empty-message">No projects to display</div>';
         return;
     }
     
-    // Find the earliest start date and latest deadline
+    // Find date range for all projects
     let earliestDate = new Date();
     let latestDate = new Date();
     
@@ -388,15 +424,15 @@ function updateProjectsTimeline() {
         latestDate = minEndDate;
     }
     
-    // Add some padding
+    // Format date range for display
     earliestDate.setDate(1); // Start from the 1st of the month
     latestDate.setMonth(latestDate.getMonth() + 1, 0); // End at the last day of the month
     
-    // Create timeline container
+    // Create the timeline structure
     const timeline = document.createElement('div');
     timeline.className = 'timeline';
     
-    // Create month headers
+    // Create month headers for the timeline
     const timelineHeader = document.createElement('div');
     timelineHeader.className = 'timeline-header';
     
@@ -405,7 +441,7 @@ function updateProjectsTimeline() {
     emptyCell.className = 'timeline-row-label';
     timelineHeader.appendChild(emptyCell);
     
-    // Get all months between start and end
+    // Generate month columns for the timeline
     const months = [];
     const startMonth = new Date(earliestDate);
     const endMonth = new Date(latestDate);
@@ -424,67 +460,75 @@ function updateProjectsTimeline() {
     
     timeline.appendChild(timelineHeader);
     
-    // Calculate total days in timeline
+    // Calculate the total span of days for positioning projects
     const totalDays = Math.ceil((latestDate - earliestDate) / (1000 * 60 * 60 * 24));
     
-    // Create project rows
+    // Create a row for each project in the timeline
     projects.forEach(project => {
         const projectStartDate = new Date(project.startDate);
         const projectDeadline = new Date(project.deadline);
         
-        // Calculate position and width
+        // Calculate position and width of the project bar
         const startOffset = Math.ceil((projectStartDate - earliestDate) / (1000 * 60 * 60 * 24));
         const duration = Math.ceil((projectDeadline - projectStartDate) / (1000 * 60 * 60 * 24)) + 1;
         
         const startPercent = (startOffset / totalDays) * 100;
         const widthPercent = (duration / totalDays) * 100;
         
-        // Create row
+        // Create row elements
         const timelineRow = document.createElement('div');
         timelineRow.className = 'timeline-row';
         
-        // Project name
+        // Add project name column
         const projectLabel = document.createElement('div');
         projectLabel.className = 'timeline-row-label';
         projectLabel.textContent = project.name;
         projectLabel.title = project.name;
         timelineRow.appendChild(projectLabel);
         
-        // Project timeline track
+        // Create the timeline track where the project bar sits
         const timelineTrack = document.createElement('div');
         timelineTrack.className = 'timeline-row-track';
         timelineRow.appendChild(timelineTrack);
         
-        // Project timeline bar
+        // Create the actual project bar
         const timelineBar = document.createElement('div');
         timelineBar.className = `timeline-bar timeline-bar-${getStatusClass(project.status)}`;
         timelineBar.style.left = `${startPercent}%`;
         timelineBar.style.width = `${widthPercent}%`;
         timelineBar.title = `${project.name}: ${formatDate(projectStartDate)} - ${formatDate(projectDeadline)}`;
         
-        // Make the bar clickable to view project details
+        // Make project bars clickable to navigate to project details
         timelineBar.addEventListener('click', () => {
             window.location.href = `project-details.html?id=${project.id}`;
         });
         
         timelineTrack.appendChild(timelineBar);
-        
         timeline.appendChild(timelineRow);
     });
     
     projectsTimelineElement.appendChild(timeline);
 }
 
+// Updates the recent projects navigation sidebar
 function updateRecentProjectsNav() {
+    const recentProjectsNavElement = document.getElementById('recent-projects-nav');
     if (!recentProjectsNavElement) return;
     
-    // Use currentUser instead of projectDetailUser, which is only defined in project-details.js
+    // Verify user authentication
+    const currentUser = getCurrentUser();
     if (!currentUser || !currentUser.userId) {
-        console.error("User information not available for recent projects");
+        recentProjectsNavElement.innerHTML = '<div class="nav-placeholder-message">Sign in to see recent projects</div>';
         return;
     }
     
-    // Clear previous content
+    // Detect if we're on a project details page to highlight current project
+    let currentProjectId = null;
+    if (window.location.pathname.includes('project-details.html')) {
+        const urlParams = new URLSearchParams(window.location.search);
+        currentProjectId = urlParams.get('id');
+    }
+    
     recentProjectsNavElement.innerHTML = '';
     
     // Get projects from local storage
@@ -496,28 +540,30 @@ function updateRecentProjectsNav() {
         return;
     }
     
-    // Sort projects by updated date (most recent first)
+    // Show most recently updated projects
     const recentProjects = [...projectsList]
         .sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt))
         .slice(0, 5); // Show only top 5
     
-    // Create nav items
+    // Create navigation links for each project
     recentProjects.forEach(p => {
+        if (!p) return; // Skip undefined projects
+        
+        // Create project link
         const projectLink = document.createElement('a');
         projectLink.href = `project-details.html?id=${p.id}`;
         projectLink.className = 'nav-item';
         
-        // Add active class if we're on the project details page for this project
-        const urlParams = new URLSearchParams(window.location.search);
-        const currentProjectId = urlParams.get('id');
+        // Highlight current project if we're viewing it
         if (currentProjectId && p.id === currentProjectId) {
             projectLink.classList.add('active');
         }
         
-        // Status icon
+        // Create status icon based on project status
         const statusIcon = document.createElement('i');
+        const status = (p.status || 'not started').toLowerCase();
         
-        switch(p.status.toLowerCase()) {
+        switch(status) {
             case 'not started':
                 statusIcon.className = 'fas fa-circle-dot';
                 break;
@@ -538,11 +584,14 @@ function updateRecentProjectsNav() {
         }
         
         // Set icon color based on status
-        statusIcon.style.color = `var(--status-${getStatusClass(p.status)})`;
+        if (typeof getStatusClass === 'function') {
+            statusIcon.style.color = `var(--status-${getStatusClass(p.status || 'not started')})`;
+        }
         
-        // Project name
-        const projectName = document.createTextNode(p.name);
+        // Add project name
+        const projectName = document.createTextNode(p.name || 'Unnamed Project');
         
+        // Assemble the link
         projectLink.appendChild(statusIcon);
         projectLink.appendChild(projectName);
         
@@ -550,14 +599,18 @@ function updateRecentProjectsNav() {
     });
 }
 
-// ==============================================
-// PROJECT FUNCTIONS
-// ==============================================
+/**
+ * PROJECT MANAGEMENT FUNCTIONS
+ * Methods for loading, saving, and manipulating projects
+ */
+
+// Loads projects from local storage
 function loadProjects() {
     const projectsKey = `orangeAcademyProjects_${currentUser.userId}`;
     projects = JSON.parse(localStorage.getItem(projectsKey)) || [];
 }
 
+// Loads team members from local storage
 function loadTeamMembers() {
     const teamKey = `orangeAcademyTeam_${currentUser.userId}`;
     teamMembers = JSON.parse(localStorage.getItem(teamKey)) || [];
@@ -565,11 +618,13 @@ function loadTeamMembers() {
     populateTeamSelection();
 }
 
+// Saves projects to local storage
 function saveProjects() {
     const projectsKey = `orangeAcademyProjects_${currentUser.userId}`;
     localStorage.setItem(projectsKey, JSON.stringify(projects));
 }
 
+// Calculates project completion percentage based on task completion
 function calculateProgress(project) {
     if (!project.tasks || project.tasks.length === 0) return 0;
     
@@ -577,6 +632,7 @@ function calculateProgress(project) {
     return Math.round((completedTasks / project.tasks.length) * 100);
 }
 
+// Populates team member selection in project forms
 function populateTeamSelection() {
     const teamSelectionEl = document.getElementById('team-selection');
     if (!teamSelectionEl) return;
@@ -588,6 +644,7 @@ function populateTeamSelection() {
         return;
     }
     
+    // Create checkboxes for each team member
     teamMembers.forEach(member => {
         const option = document.createElement('div');
         option.className = 'team-member-option';
@@ -607,11 +664,12 @@ function populateTeamSelection() {
     });
 }
 
+// Opens the project creation/editing modal
 function openProjectModal(projectId = null) {
-    // Reset form
+    // Reset form for new input
     projectForm.reset();
     
-    // Set default dates
+    // Set default dates for new projects
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('project-start-date').value = today;
     
@@ -619,12 +677,11 @@ function openProjectModal(projectId = null) {
     nextWeek.setDate(nextWeek.getDate() + 7);
     document.getElementById('project-deadline').value = nextWeek.toISOString().split('T')[0];
     
-    // Check if editing
+    // If editing existing project, populate form with project data
     if (projectId) {
         editingProjectId = projectId;
         document.getElementById('modal-title').textContent = 'Edit Project';
         
-        // Find project
         const project = projects.find(p => p.id === projectId);
         if (project) {
             document.getElementById('project-name').value = project.name;
@@ -633,7 +690,7 @@ function openProjectModal(projectId = null) {
             document.getElementById('project-deadline').value = project.deadline;
             document.getElementById('project-status').value = project.status;
             
-            // Select team members
+            // Select team members for the project
             if (project.team) {
                 const checkboxes = document.querySelectorAll('#team-selection input[type="checkbox"]');
                 checkboxes.forEach(cb => {
@@ -646,24 +703,26 @@ function openProjectModal(projectId = null) {
         document.getElementById('modal-title').textContent = 'New Project';
     }
     
-    // Show modal
+    // Display the modal
     projectModal.style.display = 'block';
 }
 
+// Closes the project modal without saving changes
 function closeProjectModal() {
     projectModal.style.display = 'none';
     editingProjectId = null;
 }
 
+// Saves project data from the modal form
 function saveProject() {
-    // Get form data
+    // Get form input values
     const name = document.getElementById('project-name').value.trim();
     const description = document.getElementById('project-description').value.trim();
     const startDate = document.getElementById('project-start-date').value;
     const deadline = document.getElementById('project-deadline').value;
     const status = document.getElementById('project-status').value;
     
-    // Validate
+    // Validate required fields
     if (!name || !startDate || !deadline) {
         alert('Please fill in all required fields.');
         return;
@@ -705,42 +764,46 @@ function saveProject() {
         projects.push(newProject);
     }
     
-    // Save projects
+    // Save to localStorage and update UI
     saveProjects();
-    
-    // Close modal and update UI
     closeProjectModal();
     updateDashboard();
 }
 
-// ==============================================
-// VIEW MANAGEMENT
-// ==============================================
+/**
+ * VIEW MANAGEMENT FUNCTIONS
+ * Methods for handling different view modes and filtering
+ */
+
+// Updates the current view mode (card, list, timeline)
 function updateViewMode() {
-    // This would handle different view modes (card, list, timeline)
-    // We'll implement if needed for projects view
+    // This would handle different view modes for projects
     console.log(`View mode changed to: ${currentView}`);
 }
 
+// Filters projects based on search term
 function filterProjects(searchTerm = '') {
-    // Will be used for filtering projects in the projects view
-    // Implementation depends on how the projects view is structured
+    // Filtering functionality for project views
 }
 
+// Highlights search terms in the UI
 function highlightSearchTerms(searchTerm) {
-    // This would highlight search terms in the current view
-    // Implementation depends on the view structure
+    // Search term highlighting logic
     if (!searchTerm) return;
 }
 
-// ==============================================
-// USER AUTHENTICATION FUNCTIONS
-// ==============================================
+/**
+ * USER AUTHENTICATION FUNCTIONS
+ * Methods for handling user sessions
+ */
+
+// Checks if a user is logged in
 function isLoggedIn() {
     const session = JSON.parse(localStorage.getItem('orangeAcademySession')) || {};
     return !!session.loggedIn;
 }
 
+// Gets the current user data from session storage
 function getCurrentUser() {
     const session = JSON.parse(localStorage.getItem('orangeAcademySession')) || {};
     return {
@@ -750,19 +813,17 @@ function getCurrentUser() {
     };
 }
 
-/**
- * Updates the user interface with the current user's information and sets up the dropdown menu
- */
+// Updates the UI with current user information
 function updateUserUI() {
     if (!userInfoElement || !currentUser) return;
     
-    // Create initials from user's name
+    // Create user initials for the avatar
     const nameParts = currentUser.fullname.split(' ');
     const initials = nameParts.length > 1 
         ? (nameParts[0][0] + nameParts[1][0]).toUpperCase() 
         : nameParts[0].substring(0, 2).toUpperCase();
     
-    // Update user info in sidebar
+    // Update the user info display in the sidebar
     userInfoElement.innerHTML = `
         <div class="user-avatar">${initials}</div>
         <div class="user-details">
@@ -780,16 +841,14 @@ function updateUserUI() {
         existingMenu.remove();
     }
     
-    // Find the user profile container
+    // Set up the user dropdown menu
     const userProfile = document.querySelector('.user-profile');
     if (!userProfile) return;
     
-    // Create dropdown menu
     const userMenu = document.createElement('div');
     userMenu.id = 'user-dropdown-menu';
     userMenu.className = 'user-menu';
     
-    // Set menu content
     userMenu.innerHTML = `
         <a href="#" class="user-menu-item" id="profile-btn">
             <i class="fas fa-user-circle"></i> Profile
@@ -803,10 +862,9 @@ function updateUserUI() {
         </a>
     `;
     
-    // Append menu to the user profile div
     userProfile.appendChild(userMenu);
     
-    // Set up click handler for logout button
+    // Set up logout functionality
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', function(e) {
@@ -815,7 +873,7 @@ function updateUserUI() {
         });
     }
     
-    // Set up toggle functionality for user info
+    // Toggle dropdown menu on user profile click
     userInfoElement.addEventListener('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
@@ -824,7 +882,7 @@ function updateUserUI() {
         userMenu.style.display = isVisible ? 'none' : 'block';
     });
     
-    // Close menu when clicking outside
+    // Close dropdown when clicking outside
     document.addEventListener('click', function(e) {
         if (userMenu.style.display === 'block' &&
             !userInfoElement.contains(e.target) && 
@@ -834,31 +892,33 @@ function updateUserUI() {
     });
 }
 
-/**
- * Log out the current user with a confirmation dialog
- */
+// Logs out the current user
 function logout() {
-    // Show confirmation dialog
     if (confirm('Are you sure you want to log out?')) {
-        // Clear session data
         localStorage.removeItem('orangeAcademySession');
         
-        // Add a fade-out effect to the whole page
+        // Add fade-out animation before redirecting
         document.body.style.opacity = '0';
         document.body.style.transition = 'opacity 0.5s';
         
-        // Redirect after animation
         setTimeout(() => {
             window.location.href = 'login.html';
         }, 500);
     }
 }
 
-// ==============================================
-// UTILITY FUNCTIONS
-// ==============================================
+/**
+ * UTILITY FUNCTIONS
+ * Helper methods used throughout the application
+ */
+
+// Maps status strings to CSS class names
 function getStatusClass(status) {
-    switch(status.toLowerCase()) {
+    if (!status) return 'not-started';
+    
+    const statusLower = status.toLowerCase();
+    
+    switch(statusLower) {
         case 'not started':
             return 'not-started';
         case 'in progress':
@@ -874,6 +934,7 @@ function getStatusClass(status) {
     }
 }
 
+// Formats dates for display
 function formatDate(date) {
     return date.toLocaleDateString('en-US', { 
         year: 'numeric', 
@@ -882,6 +943,7 @@ function formatDate(date) {
     });
 }
 
+// Formats dates in relative terms (e.g., "2 days ago")
 function formatDateRelative(date) {
     const now = new Date();
     const diffTime = now - date;
